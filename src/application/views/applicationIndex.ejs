@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/Global.css">
+    <link rel="stylesheet" href="/css/application.css">
+    <link rel="stylesheet" href="/css/nav.css">
+    <link rel="stylesheet" href="/css/footer.css">
+    <link rel="icon" type="image/png" href="/images/logo_docsigned.png">
+    <title>NewStetic - DocSigned</title>
+</head>
+    <%- include('../../components/nav.ejs') %> 
+<body>
+    <div class="container">
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon total">📄</div>
+                <div class="stat-content">
+                    <div class="stat-number" id="totalCount"><%= totalDocuments %></div>
+                    <div class="stat-label">Total Solicitudes</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon pending">⏰</div>
+                <div class="stat-content">
+                    <div class="stat-number" id="pendingCount"><%= pendingDocuments %></div>
+                    <div class="stat-label">Pendientes</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon approved">✓</div>
+                <div class="stat-content">
+                    <div class="stat-number" id="approvedCount"><%= signedDocuments %></div>
+                    <div class="stat-label">Aprobadas</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon rejected">✕</div>
+                <div class="stat-content">
+                    <div class="stat-number" id="rejectedCount">0</div>
+                    <div class="stat-label">Rechazadas</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="content-header">
+                <h2 class="content-title">Gestión de Solicitudes</h2>
+                <p class="content-subtitle">
+                    Consulta y administra todas las solicitudes realizadas en el sistema
+                </p>
+            </div>
+
+            <!-- Filters Section -->
+            <div class="filters-container">
+                <div class="search-container">
+                    <span class="search-icon">🔍</span>
+                    <input
+                        type="text"
+                        id="searchInput"
+                        class="search-input"
+                        placeholder="Buscar por ID, nombre o cédula..."
+                    />
+                </div>
+
+                <div class="filter-buttons">
+                    <select id="statusFilter" class="select-filter">
+                        <option value="TODOS">Todos los estados</option>
+                        <option value="PENDIENTE">Pendiente</option>
+                        <option value="APROBADO">Aprobado</option>
+                        <option value="RECHAZADO">Rechazado</option>
+                        <option value="EN_PROCESO">En Proceso</option>
+                    </select>
+
+                    <select id="dateFilter" class="select-filter">
+                        <option value="all">Todas las fechas</option>
+                        <option value="today">Hoy</option>
+                        <option value="week">Última semana</option>
+                        <option value="month">Último mes</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Results Count -->
+            <div class="results-count" id="resultsCount">
+                Mostrando 0 de 0 solicitudes
+            </div>
+
+            <!-- Documents Grid: renderizado server-side similar a la vista de pendientes -->
+            <div id="documentsContainer">
+                <div class="documents-grid" id="pendingDocuments">
+                    <% if (applicationDocs && applicationDocs.length > 0) { %>
+                        <% applicationDocs.forEach(function(doc) { 
+                            const id = doc.id_registro_solicitud || doc.id || doc.id_solicitud || '';
+                            const estado = (doc.estado_solicitud || doc.estado || '').toString().toUpperCase();
+                            const fechaRaw = doc.fecha_mostrar || doc.fecha || doc.fecha_creacion;
+                            const nombre = doc.nombre_usuario || doc.usuario || doc.nombre_completo || '';
+                            const cedula = doc.cedula || doc.identificacion || '';
+                            const comentario = doc.desc_comentario || doc.comentario || doc.observacion || '';
+                            const firmanteName = doc.nombre_firmante || doc.firmante || ('Firmante ' + (doc.id_firmante || 'N/A'));
+                            const firmanteId = doc.id_firmante || null;
+                        %>
+                            <div class="document-card" data-id="<%= id %>">
+                                <div class="document-header">
+                                    <div>
+                                        <div class="document-title">ID: <%= id %></div>
+                                        <div class="document-date">
+                                            <%= estado === 'FIRMADO' ? 'Fecha de firma: ' : 'Fecha de solicitud: ' %>
+                                            <%= (() => {
+                                                const fecha = new Date(fechaRaw || new Date().toISOString());
+                                                fecha.setHours(fecha.getHours() + 5);
+                                                return fecha.toLocaleString('es-CO', {
+                                                    year: 'numeric',
+                                                    month: '2-digit',
+                                                    day: '2-digit',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                    hour12: true,
+                                                    timeZone: 'America/Bogota'
+                                                });
+                                            })() %>
+                                        </div>
+                                    </div>
+                                    <div class="document-status <%= estado === 'PENDIENTE' ? 'status-pending' : 'status-signed' %>">
+                                        <%= estado %>
+                                    </div>
+                                </div>
+
+                                <div class="document-user"><h4>Solicitante:</h4> <%= applicationName %></div>
+
+                                <!-- Mostrar firmante específico de esta solicitud (nombre o id) -->
+                                <div class="firmante-line">
+                                    <strong>Firmante:</strong> <%= firmanteName %>
+                                </div>
+
+                                <div class="comment-section">
+                                    <div class="comment-header">
+                                        <div class="comment-icon">
+                                            <i class="fas fa-comment"></i>
+                                        </div>
+                                        <h4 class="comment-title">Comentarios</h4>
+                                    </div>
+
+                                    <% if (comentario && comentario.toString().trim()) { %>
+                                        <div class="comment-content">
+                                            <p class="comment-text"><%= comentario %></p>
+                                        </div>
+                                    <% } else { %>
+                                        <div class="comment-empty">
+                                            No hay comentarios para esta solicitud
+                                        </div>
+                                    <% } %>
+                                </div>
+                            </div>
+                        <% }); %>
+                     <% } else { %>
+                         <div>No hay solicitudes.</div>
+                     <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Detalles de la Solicitud</h2>
+                <span class="close" id="closeModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="detalles-grid">
+                    <div class="detalles-info" id="modalDetails">
+                        <!-- Detalles se cargarán aquí -->
+                    </div>
+                    <div class="pdf-preview">
+                        <div class="pdf-placeholder">
+                            <div class="pdf-icon">📄</div>
+                            <p>Vista previa del documento</p>
+                            <p style="font-size: 14px; opacity: 0.7;" id="pdfName"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/js/application.controller.js"></script>
+    <%- include('../../components/footer.ejs') %>
+</body>
+</html>

@@ -9,10 +9,10 @@ const singRouter = require('./src/sign/routes/sign.route.js');
 const authRouter = require ('./src/auth/routes/auth.route.js')
 const indexRouter = require ('./src/app/routes/index.route.js')
 const pendingRouter = require('./src/pending/routes/pending.route.js');
+const applicationRouter = require('./src/application/routes/application.route.js');
 const { authenticateToken } = require('./src/app/middleware/auth.middleware.js');
 const userProfileRouter = require('./src/userProfile/routes/userProfile.route.js');
 const cookieParser = require("cookie-parser");
-
 
 
 
@@ -38,6 +38,7 @@ app.use('/api/masivesign', authenticateToken, masiveRouter);
 app.use('/api/sign', authenticateToken, singRouter);
 app.use('/api/pending', authenticateToken, pendingRouter);
 app.use('/api/userProfile', authenticateToken, userProfileRouter);
+app.use('/api/application', authenticateToken, applicationRouter);
 
 // Modificar el middleware de archivos para un mejor manejo
 const serveFileMiddleware = (req, res, next) => {

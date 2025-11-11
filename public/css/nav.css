@@ -146,7 +146,7 @@ body {
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
-  background: var(--primary-500);
+  background: var(--danger-400);
   color: white;
   border: none;
   border-radius: var(--radius-md);
@@ -163,10 +163,10 @@ body {
 .pending-requests-btn:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
-  background: var(--secondary-500);
+  background: var(--danger-500);
 }
 
-.pending-requests-btn:active { 
+.pending-requests-btn:active {
   transform: translateY(0); 
 }
 
@@ -198,6 +198,81 @@ body {
 }
 
 .pending-badge.large-number {
+  min-width: 24px;
+  border-radius: 10px;
+  font-size: .7rem;
+  padding: 0 var(--space-2);
+}
+
+@keyframes pulse {
+  0%, 100% { 
+    transform: scale(1); 
+    opacity: 1; 
+  }
+  50% { 
+    transform: scale(1.1); 
+    opacity: .9; 
+  }
+}
+/* Solicitudes Requests */
+.solicitudes-requests-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--primary-500);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all var(--transition);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.solicitudes-requests-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  background: var(--secondary-500);
+}
+
+.solicitudes-requests-btn:active { 
+  transform: translateY(0); 
+}
+
+.solicitudes-icon { 
+  width: 18px; 
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* Badge significa notificación */
+.solicitudes-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  font-size: .75rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--danger-500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-1);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+  animation: pulse 2s infinite;
+}
+
+.solicitudes-badge.large-number {
   min-width: 24px;
   border-radius: 10px;
   font-size: .7rem;

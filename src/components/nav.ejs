@@ -1,4 +1,5 @@
-    
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css" rel="stylesheet">
+
     <header class="header-nav-gen">
         <div class="header-content-nav">
             <!-- Logo Section -->
@@ -15,14 +16,19 @@
             
             <!-- Navigation Actions -->
             <div class="header-nav">
+
+                <!-- Botón de Mis Solicitudes -->
+                  <a href="/api/application" class="solicitudes-requests-btn" id="solicitudesRequestsBtn">
+                    <!-- Icono de documentos/solicitudes -->
+                    <span class="mdi mdi-account-details"></span>
+                    <span>Solicitudes</span>
+                    <!-- Badge con contador -->
+                </a>  
                 <!-- Botón de Solicitudes Pendientes -->
                 <a href="/api/pending/" class="pending-requests-btn" id="pendingRequestsBtn">
                     <!-- Icono de documentos/solicitudes -->
-                    <svg class="pending-icon" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
-                        <path d="M8,12H16V14H8V12M8,16H13V18H8V16Z"/>
-                    </svg>
-                    <span>Solicitudes</span>
+                    <span class="mdi mdi-file-sign"></span>
+                    <span>Pendientes</span>
                     <!-- Badge con contador -->
                     <span class="pending-badge" id="pendingCount"><%= pendingDocuments %></span>
                 </a>

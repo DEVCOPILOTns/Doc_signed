@@ -4,18 +4,21 @@ const {getDetallesDocuments, getPendingDocuments, countPendingandSigned, changeS
 const { uploadFileToStorage } = require('../services/uploadFileToStorage.service');
 const signatureService = require('../../pending/services/signature.service');
 
-async function pendingRender(req, res) {
-  try {
-    let pendingDocs = [];
-    if (req.user && req.user.id_registro_usuarios) {
-      pendingDocs = await getPendingDocuments(req.user.id_registro_usuarios);
-    }
-    res.render('pending/views/pendingIndex', { pendingDocs });
-  } catch (error) {
-    console.error('Error al renderizar index pendientes:', error);
-    res.render('pending/views/pendingIndex', { pendingDocs: [], error: 'No se pudieron cargar las solicitudes pendientes.' });
-  }
-}
+
+
+//async function pendingRender(req, res) {
+  //try {
+    //let pendingDocs = [];
+    //if (req.user && req.user.id_registro_usuarios) {
+      //pendingDocs = await getPendingDocuments(req.user.id_registro_usuarios);
+    //}
+    //res.render('pending/views/pendingIndex', { pendingDocs });
+  //} catch (error) {
+    //console.error('Error al renderizar index pendientes:', error);
+    //res.render('pending/views/pendingIndex', { pendingDocs: [], error: 'No se pudieron cargar las solicitudes pendientes.' });
+  //}
+//}
+
 async function getPending(req, res) {
   try {
     if (!req.user || !req.user.id_registro_usuarios) {
@@ -256,7 +259,7 @@ async function signAllDocuments(req, res) {
 }
 
 module.exports = {
-  pendingRender,
+  //pendingRender,
   getPending,
   signAllDocuments,
   getDetallesBySolicitud,
