@@ -283,11 +283,12 @@
             gap: 8px;
         }
 
-        .document-title {
+        .document-title {                                
             padding: 6px 8px;
             font-size: 0.75rem;
             font-weight: 700;
-            background: rgba(255,255,255,0.9);
+            width: fit-content;
+            background: var(--info-500);
             color: #0f172a;
             border-radius: 8px;
         }
@@ -298,33 +299,36 @@
         }
 
         .document-status {
-            display: flex;
+            display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
             padding: 6px 10px;
             font-size: 0.72rem;
             border-radius: 14px;
             font-weight: 700;
+            text-transform: uppercase;
         }
 
-        .status-PENDIENTE {
-            background-color: rgba(251, 146, 60, 0.7);
-            color: white;
+        /* Estados: PENDIENTE -> warning, FIRMADO -> success, RECHAZADO -> danger */
+        .status-PENDIENTE,
+        .status-pending {
+            background-color: var(--warning-500, #F59E0B);
+            color: #fff;
         }
 
+        .status-FIRMADO,
+        .status-signed,
         .status-APROBADO {
-            background-color: rgba(16, 185, 129, 0.7);
-            color: white;
+            background-color: var(--success-500, #10B981);
+            color: #fff;
         }
 
-        .status-RECHAZADO {
-            background-color: rgba(239, 68, 68, 0.7);
-            color: white;
-        }
-
-        .status-EN_PROCESO {
-            background-color: rgba(59, 130, 246, 0.7);
-            color: white;
+        /* Asegurar que RECHAZADO use danger-400 con fallback */
+        .status-RECHAZADO,
+        .status-rejected {
+            background-color: var(--danger-400, #fb6f6f);
+            color: #fff;
         }
 
         .document-user,

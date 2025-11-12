@@ -206,7 +206,7 @@
 
         .toggle-option.active {
             color: var(--bg-light);
-            background: var(--danger-500);
+            background: var(--warning-500);
             box-shadow: 0 4px 12px rgba(227, 231, 102, 0.4);
         }
 
@@ -260,7 +260,7 @@
             font-weight: 700;
             letter-spacing: 0.02em;
             color: #1e293b;
-            background: var(--primary-800);
+            background: var(--info-500);
             border-radius: 0.5rem;
             box-shadow: 0 1px 3px rgba(250, 204, 21, 0.2);
             transition: all 0.2s ease;
@@ -279,7 +279,7 @@
             white-space: nowrap;
         }
         .status-pending {
-            background-color: color-mix(in srgb, var(--danger-500) 70%, transparent);
+            background-color: color-mix(in srgb, var(--warning-500) 70%, transparent);
             color: white;
         }
 
@@ -353,29 +353,52 @@
     letter-spacing: -0.02em;
 }
 
-/* Botón Firmar Todos mejorado */
-.btn-sign-all {
+/* Botón Rechazo  mejorado */
+.btn-reject {
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
     padding: 0.75rem 1.75rem;
-    background: white;
-    color: var(--success-500);
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: var(--danger-400);
+    border-radius: var(--radius-md);
+    color: white;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+    font-family: var(--font-sans);
+}
+
+.btn-reject:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    background: var(--danger-500);
+}
+
+.btn-reject:active {
+    transform: translateY(0);
+}
+
+/* Botón Firmar Todos mejorado */
+.btn-sign-all {
+    display: inline-flex;
+    color: white;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0.75rem 1.75rem;
+    background: var(--success-500);
     border-radius: var(--radius-md);
     font-size: 0.9375rem;
     font-weight: 600;
     cursor: pointer;
     transition: all var(--transition);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     font-family: var(--font-sans);
 }
 
 .btn-sign-all:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
-    background: rgba(255, 255, 255, 0.95);
-    border-color: rgba(255, 255, 255, 0.5);
+    background: var(--success-600);
 }
 
 .btn-sign-all:active {

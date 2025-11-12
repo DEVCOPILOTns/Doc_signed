@@ -152,14 +152,15 @@ async function createDocumentSigned(url, formato, idFirmante, idDetalleSolicitud
     }
 }
 
-async function changeStateApplication(idSolicitud) {
+async function changeStateApplication(idSolicitud, newState) {
     try {
         const pool = await config.poolPromise;
         const result = await pool.request()
             .input('idSolicitud', sql.Int, idSolicitud)
+            .input('newState', sql.VarChar, newState)
             .query(`
                 UPDATE solicitudes 
-                SET estado_solicitud = 'FIRMADO'
+                SET estado_solicitud = @newState
                 WHERE id_registro_solicitud = @idSolicitud
             `);
         return result;

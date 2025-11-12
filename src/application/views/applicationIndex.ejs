@@ -18,28 +18,28 @@
             <div class="stat-card">
                 <div class="stat-icon total">📄</div>
                 <div class="stat-content">
-                    <div class="stat-number" id="totalCount"><%= totalDocuments %></div>
+                    <div class="stat-number" id="totalCount"><%= countTotal %></div>
                     <div class="stat-label">Total Solicitudes</div>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon pending">⏰</div>
                 <div class="stat-content">
-                    <div class="stat-number" id="pendingCount"><%= pendingDocuments %></div>
+                    <div class="stat-number" id="pendingCount"><%= countPending %></div>
                     <div class="stat-label">Pendientes</div>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon approved">✓</div>
                 <div class="stat-content">
-                    <div class="stat-number" id="approvedCount"><%= signedDocuments %></div>
+                    <div class="stat-number" id="approvedCount"><%= countSigned %></div>
                     <div class="stat-label">Aprobadas</div>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon rejected">✕</div>
                 <div class="stat-content">
-                    <div class="stat-number" id="rejectedCount">0</div>
+                    <div class="stat-number" id="rejectedCount"><%= countRejected %></div>
                     <div class="stat-label">Rechazadas</div>
                 </div>
             </div>
@@ -72,7 +72,6 @@
                         <option value="PENDIENTE">Pendiente</option>
                         <option value="APROBADO">Aprobado</option>
                         <option value="RECHAZADO">Rechazado</option>
-                        <option value="EN_PROCESO">En Proceso</option>
                     </select>
 
                     <select id="dateFilter" class="select-filter">
@@ -124,7 +123,8 @@
                                             })() %>
                                         </div>
                                     </div>
-                                    <div class="document-status <%= estado === 'PENDIENTE' ? 'status-pending' : 'status-signed' %>">
+                                    <% const estadoClass = 'status-' + (estado || '').replace(/\s+/g, '_'); %>
+                                    <div class="document-status <%= estadoClass %>">
                                         <%= estado %>
                                     </div>
                                 </div>
@@ -169,18 +169,31 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Detalles de la Solicitud</h2>
+                <!-- botón de cierre (id usado por tu JS) -->
                 <span class="close" id="closeModal">&times;</span>
             </div>
             <div class="modal-body">
                 <div class="detalles-grid">
-                    <div class="detalles-info" id="modalDetails">
-                        <!-- Detalles se cargarán aquí -->
+                    <!-- Parte izquierda: información (uso el id que espera tu JS) -->
+                    <div id="modalDetails" class="detalles-info">
+                        <!-- Contenido cargado por JS -->
                     </div>
+
+                    <!-- Parte derecha: lista de documentos y visor PDF -->
                     <div class="pdf-preview">
-                        <div class="pdf-placeholder">
-                            <div class="pdf-icon">📄</div>
-                            <p>Vista previa del documento</p>
-                            <p style="font-size: 14px; opacity: 0.7;" id="pdfName"></p>
+                        <div class="pdf-toolbar">
+                            <div id="documentList" class="document-list">
+                                <!-- Lista de archivos (insertada por JS) -->
+                            </div>
+                        </div>
+
+                        <div class="pdf-viewer-wrapper">
+                            <iframe id="pdfViewer" width="100%" height="500px" frameborder="0" style="background:#0f172a;"></iframe>
+                            <div class="pdf-placeholder-fallback" id="pdfFallback" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px;">
+                                <div class="pdf-icon" style="font-size:48px;">📄</div>
+                                <p style="margin-top:12px;">Vista previa del documento</p>
+                                <p style="font-size: 14px; opacity: 0.7;" id="pdfName"></p>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -36,8 +36,6 @@ async function getApplicationsByUser(userId) {
 }
 
 
-
-
 // NUEVA función: obtener una solicitud y sus archivos por id
 async function getApplicationById(solicitudId) {
     try {
@@ -68,7 +66,49 @@ async function getApplicationById(solicitudId) {
     }
 }
 
+async function getApplicationDocuments(applicationId) {
+    try {
+        if (applicationId === undefined || applicationId === null || applicationId === '') {
+            return [];
+        }
+
+        const pool = await config.poolPromise;
+        const isInt = Number.isInteger(Number(applicationId));
+        const paramType = isInt ? sql.Int : sql.VarChar;
+
+        const result = await pool.request()
+            .input('applicationId', paramType, applicationId)
+            .query(`
+                SELECT
+                    id_detalle_firmado,
+                    id_detalle,
+                    url_archivo_firmado,
+                    id_firmante,
+                    fecha_firma,
+                    id_solicitud
+                FROM Documentos_Firmados
+                WHERE id_solicitud = @applicationId
+                ORDER BY fecha_firma DESC
+            `);
+
+        const rows = result.recordset || [];
+        return rows.map(r => ({
+            id_detalle_firmado: r.id_detalle_firmado,
+            id_detalle: r.id_detalle,
+            url_archivo: r.url_archivo_firmado,
+            id_firmante: r.id_firmante,
+            fecha_firma: r.fecha_firma,
+            id_solicitud: r.id_solicitud,
+            nombre_original: (r.url_archivo_firmado || '').split('/').pop() || null
+        }));
+    } catch (error) {
+        console.error('Error fetching application documents:', error);
+        throw error;
+    }
+}
+
 module.exports = {
     getApplicationsByUser,
     getApplicationById,
+    getApplicationDocuments
 };

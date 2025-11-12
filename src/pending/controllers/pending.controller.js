@@ -221,7 +221,7 @@ async function signAllDocuments(req, res) {
 
             // Actualizar estado si todo fue exitoso
             if (resultados.every(r => r.firmado)) {
-                await changeStateApplication(userInfo.selectedDocumentId);
+                await changeStateApplication(userInfo.selectedDocumentId, 'FIRMADO');
             }
 
             return res.status(200).json({
@@ -258,10 +258,15 @@ async function signAllDocuments(req, res) {
     }
 }
 
+async function rejectApplication(req, res) {
+    await changeStateApplication(req.params.selectedDocumentId, 'RECHAZADO');
+}
+
 module.exports = {
   //pendingRender,
   getPending,
   signAllDocuments,
   getDetallesBySolicitud,
+  rejectApplication
 };
 

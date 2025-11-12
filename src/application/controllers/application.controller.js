@@ -1,10 +1,24 @@
-const { getApplicationsByUser, getApplicationById } = require('../models/application.model');
-const {countPendingandSigned} = require('../../pending/models/pending.model');
+const { getApplicationsByUser, getApplicationById, getApplicationDocuments } = require('../models/application.model');
+const {countPendingandSigned } = require('../../pending/models/pending.model');
+
+//Funcion para contar estados
+function countApplicationStatus(docs = []) {
+  const counts = { FIRMADO: 0, PENDIENTE: 0, RECHAZADO: 0, OTROS: 0, total: 0 };
+  if (!Array.isArray(docs)) return counts;
+  docs.forEach(item => {
+    const estado = (item.estado_solicitud || item.estado || '').toString().trim().toUpperCase();
+    if (estado === 'FIRMADO') counts.FIRMADO++;
+    else if (estado === 'PENDIENTE') counts.PENDIENTE++;
+    else if (estado === 'RECHAZADO' || estado === 'RECHAZADOS') counts.RECHAZADO++;
+    else counts.OTROS++;
+    counts.total++;
+  });
+  return counts;
+}
 
 async function applicationRender(req, res) {
   try {
     const userId = req.user && req.user.id_registro_usuarios;
-    console.log('applicationRender: userId=', userId); // Log para depurar
     let applicationDocs = [];
     if (userId) {
       applicationDocs = await getApplicationsByUser(userId);
@@ -15,14 +29,21 @@ async function applicationRender(req, res) {
     // Priorizar el firmante obtenido de applicationDocs (si existe), si no usar el de pendingData
 
 
+    const statusCounts = countApplicationStatus(applicationDocs);
+    // console.log('statusCounts:', statusCounts);
+
     res.render('application/views/applicationIndex', { 
       applicationDocs,
       pendingDocuments: pendingData?.pendientes || 0,
       signedDocuments: pendingData?.firmados || 0,
-      totalDocuments: (pendingData?.pendientes || 0) + (pendingData?.firmados || 0),
       signedUser: pendingData.id_firmante || null,
       signedName: applicationDocs.length > 0 ? applicationDocs[0].nombre_firmante : (pendingData.nombre_firmante || 'N/A'),
-      applicationName: applicationDocs.length > 0 ? applicationDocs[0].nombre_solicitante : (pendingData.nombre_solicitante || 'N/A')
+      applicationName: applicationDocs.length > 0 ? applicationDocs[0].nombre_solicitante : (pendingData.nombre_solicitante || 'N/A'),
+      countSigned: statusCounts.FIRMADO,
+      countPending: statusCounts.PENDIENTE,
+      countRejected: statusCounts.RECHAZADO,
+      countOthers: statusCounts.OTROS,
+      countTotal: statusCounts.total
     });
     
   } catch (error) {
@@ -32,11 +53,7 @@ async function applicationRender(req, res) {
 
 
 
-
-
-
-
-// Endpoint JSON: lista de solicitudes (opcional, si lo necesitas desde JS)
+// aqui en esta funcion se obtienen los datos en formato JSON
 async function applicationData(req, res) {
   try {
     const userId = req.user && req.user.id_registro_usuarios;
@@ -52,27 +69,15 @@ async function applicationData(req, res) {
 async function applicationDetails(req, res) {
   try {
     const id = req.params.id;
+    console.log('applicationDetails: id=', id); // Log para depurar
     if (!id) return res.status(400).json({ error: 'Falta id de solicitud' });
 
-    const { solicitud, archivos } = await getApplicationById(id);
-    if (!solicitud) return res.status(404).json({ error: 'Solicitud no encontrada' });
+    const details = await getApplicationDocuments(id);
+    if (!details) return res.status(404).json({ error: 'Solicitud no encontrada' });
+    // console.log('applicationDetails: detalles=', details);
 
-    // Normalizar estructura de respuesta para el cliente
-    const detalles = {
-      id: solicitud.id_registro_solicitud || solicitud.id_solicitud || solicitud.id,
-      estado: solicitud.estado_solicitud || solicitud.estado || '',
-      fecha_mostrar: solicitud.fecha_mostrar || solicitud.fecha || solicitud.fecha_creacion,
-      nombre_usuario: solicitud.nombre_usuario || solicitud.usuario || solicitud.nombre_completo || '',
-      cedula: solicitud.cedula || solicitud.identificacion || '',
-      desc_comentario: solicitud.desc_comentario || solicitud.comentario || solicitud.observacion || '',
-      archivos: archivos.map(a => ({
-        id: a.id_archivo || a.id,
-        nombre_original: a.nombre_original || a.nombre,
-        url_archivo: a.url_archivo || a.ruta || a.path
-      }))
-    };
-
-    return res.json({ detalles });
+    // Devolver ambas claves para que el frontend (que busca `detalles`) y otras partes que usan `details` funcionen
+    return res.json({ details, detalles: details, idSolicitud: id });
   } catch (error) {
     console.error('Error al obtener detalles de solicitud:', error);
     return res.status(500).json({ error: 'Error al obtener detalles' });

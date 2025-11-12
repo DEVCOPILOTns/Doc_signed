@@ -256,3 +256,33 @@ function signAllDocuments() {
         alert('Error al procesar la firma de documentos');
     });
 }
+
+function rejectApplication() {
+    console.log('Intentando rechazar solicitud. ID seleccionado:', selectedDocumentId);
+    if (!selectedDocumentId) {
+        alert('Por favor, seleccione una solicitud para rechazar');
+        return;
+    }   
+    fetch(`/api/pending/${selectedDocumentId}/rechazar`, {
+        method: 'POST'
+    })
+    .then(response => {
+        if (response.ok) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Éxito',
+                text: 'La solicitud ha sido rechazada',
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'Aceptar'
+            }).then(() => {
+                window.location.reload();
+            });
+        } else {
+            throw new Error('Error al rechazar la solicitud');
+        }   
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al procesar el rechazo de la solicitud');
+    });
+}
