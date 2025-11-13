@@ -48,6 +48,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const modal = document.getElementById("myModal");
     const closeBtn = document.getElementById("closeModalBtn");
 
+    // Inicializar comentarios expandibles
+    initializeExpandableComments();
+
     cards.forEach(card => {
         // Animaciones hover
         card.addEventListener('mouseenter', function () {
@@ -196,6 +199,102 @@ document.addEventListener('DOMContentLoaded', function () {
     initializeModal();
 
 });
+
+// Función para inicializar comentarios expandibles
+function initializeExpandableComments() {
+    const commentSections = document.querySelectorAll('.comment-section');
+    
+    commentSections.forEach(section => {
+        // Verificar si hay contenido en los comentarios
+        const commentContent = section.querySelector('.comment-content');
+        const commentEmpty = section.querySelector('.comment-empty');
+        const hasContent = commentContent && commentContent.textContent.trim() !== '';
+        
+        // Si no hay contenido, no agregar el toggle
+        if (!hasContent) return;
+        
+        // Obtener el texto del comentario
+        const commentText = commentContent ? commentContent.textContent.trim() : '';
+        
+        // Crear botón toggle
+        const toggleBtn = document.createElement('button');
+        toggleBtn.classList.add('comment-toggle');
+        toggleBtn.textContent = 'Ver más';
+        toggleBtn.setAttribute('aria-expanded', 'false');
+        toggleBtn.setAttribute('aria-label', 'Expandir comentarios');
+        
+        // Agregar botón al header
+        const header = section.querySelector('.comment-header');
+        if (header) {
+            header.appendChild(toggleBtn);
+        }
+        
+        // Agregar evento click al botón para abrir modal
+        toggleBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            openCommentModal(commentText);
+        });
+        
+        // Agregar evento click a la sección también
+        section.addEventListener('click', function(e) {
+            // Solo si no hizo click en el botón
+            if (e.target !== toggleBtn) {
+                toggleBtn.click();
+            }
+        });
+    });
+}
+
+// Función para abrir modal de comentarios
+function openCommentModal(commentText) {
+    // Crear modal si no existe
+    let modal = document.getElementById('commentModal');
+    
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'commentModal';
+        modal.className = 'comment-modal';
+        modal.innerHTML = `
+            <div class="comment-modal-content">
+                <div class="comment-modal-header">
+                    <h3>Comentarios</h3>
+                    <button class="comment-modal-close" id="commentModalClose">&times;</button>
+                </div>
+                <div class="comment-modal-body" id="commentModalBody"></div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        // Evento para cerrar
+        document.getElementById('commentModalClose').addEventListener('click', closeCommentModal);
+        
+        // Cerrar al hacer clic fuera del modal
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeCommentModal();
+            }
+        });
+        
+        // Cerrar con ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.classList.contains('show')) {
+                closeCommentModal();
+            }
+        });
+    }
+    
+    // Mostrar el comentario
+    document.getElementById('commentModalBody').textContent = commentText;
+    modal.classList.add('show');
+}
+
+// Función para cerrar modal de comentarios
+function closeCommentModal() {
+    const modal = document.getElementById('commentModal');
+    if (modal) {
+        modal.classList.remove('show');
+    }
+}
 
 // fuera de document.addEventListener(...)
 function signAllDocuments() {

@@ -1,229 +1,399 @@
-// Reemplaza el mock: ahora la vista ya renderizó las tarjetas server-side.
-// Aquí asociamos los eventos sobre .document-card y pedimos detalles al backend para llenar el modal.
 
-document.addEventListener('DOMContentLoaded', () => {
+let selectedDocumentId = null;
+
+// Reemplazar la función formatDate por esta nueva función formatearFecha
+function formatearFecha(fecha) {
+    if (!fecha) return 'Sin fecha';
+    const date = new Date(fecha);
+    // Ajustar la fecha sumando 5 horas para compensar la diferencia horaria
+    date.setHours(date.getHours() + 5);
+    
+    return date.toLocaleString('es-CO', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'America/Bogota'
+    });
+}
+
+//desde aqui manejamos el modal y las interacciones de la vista de aplicaciones
+document.addEventListener('DOMContentLoaded', function () {
     const cards = document.querySelectorAll('.document-card');
-    const modal = document.getElementById('myModal');
-    const closeModal = document.getElementById('closeModal');
-    const modalDetails = document.getElementById('modalDetails');
-    const pdfName = document.getElementById('pdfName');
+    const modal = document.getElementById("myModal");
+    const closeBtn = document.getElementById("closeModal");
 
-    //aqui va el evento para abrir el modal
-    async function loadAndOpenModal(idSolicitud) {
-        try {
-            if (!idSolicitud) {
-                console.warn('loadAndOpenModal: id inválido:', idSolicitud);
-                return;
-            }
+    // Inicializar comentarios expandibles
+    initializeExpandableComments();
 
-            console.log('loadAndOpenModal: iniciando para id=', idSolicitud);
-            if (!modalDetails) {
-                console.error('loadAndOpenModal: modalDetails no existe en el DOM');
-                return;
-            }
-
-            // UI: mostrar modal y estado de carga
-            modalDetails.innerHTML = '<p class="loading">Cargando detalles...</p>';
-            
-            if (document.body) document.body.classList.add('modal-open');
-            if (modal) modal.style.display = 'flex';
-            
-            const endpoint = `/api/application/${idSolicitud}`;
-            let resp;
-            try {
-                resp = await fetch(endpoint, {
-                    method: 'GET',
-                    credentials: 'same-origin',
-                    headers: { 'Accept': 'application/json' }
-                });
-            } catch (err) {
-                console.error('loadAndOpenModal: error fetch', err);
-                modalDetails.innerHTML = `<div class="error-message">Error conectando con el servidor. Ver consola.</div>`;
-                return;
-            }
-
-            if (!resp || !resp.ok) {
-                const text = await (resp ? resp.text().catch(()=>'<no body>') : '<no response>');
-                console.error('loadAndOpenModal: respuesta no OK', resp && resp.status, text);
-                modalDetails.innerHTML = `<div class="error-message">Error del servicio ${idSolicitud} (HTTP ${resp ? resp.status : 'N/A'}).</div>`;
-                return;
-            }
-
-            let payload;
-            try {
-                payload = await resp.json();
-            } catch (e) {
-                console.error('loadAndOpenModal: fallo parseando JSON', e);
-                const raw = await resp.text().catch(()=>'<no body>');
-                modalDetails.innerHTML = `<p class="error-message">Respuesta inválida del servidor.</p><pre style="font-size:12px">${raw}</pre>`;
-                return;
-            }
-
-            console.log('loadAndOpenModal: payload=', payload);
-
-            // Normalizar: preferir 'detalles' (array). Si vienen bajo otra clave, intentar encontrar array.
-            let detalles = [];
-            if (Array.isArray(payload.detalles)) detalles = payload.detalles;
-            else if (Array.isArray(payload.details)) detalles = payload.details;
-            else if (Array.isArray(payload)) detalles = payload;
-            else {
-                for (const k of Object.keys(payload || {})) {
-                    if (Array.isArray(payload[k])) { detalles = payload[k]; break; }
-                }
-            }
-
-            if (!Array.isArray(detalles) || detalles.length === 0) {
-                console.warn('loadAndOpenModal: no hay detalles', detalles);
-                modalDetails.innerHTML = '<p class="no-detalles">No hay detalles disponibles.</p>';
-                const pdfViewer = document.getElementById('pdfViewer');
-                const documentListEl = document.getElementById('documentList');
-                const pdfFallback = document.getElementById('pdfFallback');
-                if (documentListEl) documentListEl.innerHTML = '<div style="padding:12px;color:#666">No hay documentos.</div>';
-                if (pdfViewer) { pdfViewer.style.display = 'none'; if (pdfFallback) pdfFallback.style.display = ''; }
-                return;
-            }
-
-            // helpers locales
-            function toAbsoluteUrl(u) {
-                if (!u) return '';
-                if (/^https?:\/\//i.test(u)) return u;
-                return window.location.origin + '/' + u.replace(/^\/+/, '');
-            }
-
-            // Construir UI principal usando el primer detalle
-            const primero = detalles[0] || {};
-            // determinar nombre/fecha/estado desde campos comunes
-            const nombrePrimero = primero.nombre_original || primero.nombre || primero.titulo || primero.descripcion || `Detalle ${1}`;
-            const urlPrimeroRaw = primero.url_archivo || primero.url || primero.url_archivo_firmado || primero.link || '';
-            const urlPrimero = toAbsoluteUrl(urlPrimeroRaw);
-            const fechaPrimero = formatDate(primero.fecha_firma || primero.fecha_solicitud || primero.fecha || primero.created_at);
-
-            // construir lista HTML sencilla (se muestra en la parte derecha y en la lista inline)
-            const listHtml = detalles.map((d, idx) => {
-                const name = d.nombre_original || d.nombre || d.titulo || `Archivo ${idx + 1}`;
-                const raw = d.url_archivo || d.url || d.link || '';
-                const url = toAbsoluteUrl(raw);
-                const fecha = formatDate(d.fecha_firma || d.fecha_solicitud || d.fecha || d.created_at);
-                const idDetalle = d.id_detalle_firmado ?? d.id_detalle ?? d.id_registro_detalles ?? d.id ?? '';
-                // escapar comillas simples en name para onclick inline si se usara
-                const safeName = (name || '').replace(/'/g, "\\'");
-                return `
-                    <div class="doc-list-item">
-                        <div class="doc-left">
-                            <div class="doc-name">${name}</div>
-                            <div class="doc-meta">ID detalle: ${idDetalle} · Fecha: ${fecha}</div>
-                        </div>
-                        <div class="doc-actions">
-                            <button class="btn-preview" data-url="${url}" data-name="${safeName}">Ver</button>
-                            <a class="btn-download" href="${url}" target="_blank" rel="noopener noreferrer">Descargar</a>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            // Renderizar el modal (lado izquierdo con resumen del primero y lista derecha)
-            modalDetails.innerHTML = `
-                <div class="detalle-section">
-                    <div class="detalle-header">
-                        <h3>${nombrePrimero}</h3>
-                        <span class="fecha">${fechaPrimero}</span>
-                    </div>
-                    <div class="detalle-content">
-                        <p><strong>ID principal:</strong> ${primero.id_solicitud ?? primero.id ?? ''}</p>
-                        <p><strong>Estado:</strong> ${primero.estado_documento ?? primero.estado ?? ''}</p>
-                        <div class="document-actions">
-                            ${ urlPrimero ? `<button class="btn-preview" id="btnPreviewPrimary" data-url="${urlPrimero}" data-name="${(nombrePrimero||'').replace(/'/g,"\\'")}">Ver documento</button>
-                            <a href="${urlPrimero}" target="_blank" class="btn-download">Descargar PDF</a>` : '<span style="color:#666">Sin archivo principal</span>' }
-                        </div>
-                    </div>
-                </div>
-                <div id="documentListInline">${listHtml}</div>
-            `;
-
-            // rellenar lista lateral y conectar eventos de vista previa
-            const documentListEl = document.getElementById('documentList');
-            const pdfViewer = document.getElementById('pdfViewer');
-            const pdfFallback = document.getElementById('pdfFallback');
-            const pdfNameEl = document.getElementById('pdfName');
-
-            if (documentListEl) documentListEl.innerHTML = listHtml;
-
-            // asignar listeners para botones generados (delegación simple)
-            const previewButtons = modalDetails.querySelectorAll('.btn-preview');
-            previewButtons.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const url = btn.getAttribute('data-url') || btn.dataset.url || '';
-                    const name = btn.getAttribute('data-name') || btn.dataset.name || '';
-                    if (!url) { console.warn('preview: url vacía para', name); return; }
-                    if (pdfViewer) {
-                        pdfViewer.src = url;
-                        if (pdfNameEl) pdfNameEl.textContent = name || '';
-                        if (pdfViewer) { pdfViewer.style.display = ''; if (pdfFallback) pdfFallback.style.display = 'none'; }
-                    } else {
-                        // si no hay iframe disponible usar función global existente
-                        previewPDF(url, name);
-                    }
-                });
-            });
-
-            // cargar primer archivo en visor si existe
-            if (urlPrimero && pdfViewer) {
-                setTimeout(() => {
-                    try {
-                        pdfViewer.src = urlPrimero;
-                        if (pdfNameEl) pdfNameEl.textContent = nombrePrimero || '';
-                        if (pdfFallback) pdfFallback.style.display = 'none';
-                    } catch (e) { /* ignore */ }
-                }, 80);
-            }
-
-        } catch (error) {
-            console.error('loadAndOpenModal: excepción general:', error);
-            if (modalDetails) {
-                modalDetails.innerHTML = `<p class="error-message">Error al cargar detalles: ${error && error.message ? error.message : 'Error desconocido'}</p>`;
-            }
-        }
-    }
-
-    function formatDate(dateString) {
-        if (!dateString) return 'Sin fecha';
-        const date = new Date(dateString);
-        date.setHours(date.getHours() + 5);
-        return date.toLocaleString('es-CO', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true,
-            timeZone: 'America/Bogota'
-        });
-    }
-
-    function previewPDF(url, name) {
-        // si existe un iframe o placeholder en la vista lo actualiza; si no, abre en nueva pestaña
-        const pdfViewer = document.getElementById('pdfViewer');
-        if (pdfViewer) {
-            pdfViewer.src = url;
-            if (pdfName) pdfName.textContent = name || '';
-        } else {
-            window.open(url, '_blank');
-        }
-    }
-
-    // Asociar click a cada tarjeta renderizada server-side
     cards.forEach(card => {
-        card.addEventListener('click', () => {
-            const id = card.getAttribute('data-id');
-            if (id) loadAndOpenModal(id);
+        // Animaciones hover
+        card.addEventListener('mouseenter', function () {
+            this.style.transform = 'translateY(-5px) scale(1.02)';
         });
-        // hover visual
-        card.addEventListener('mouseenter', () => { card.style.transform = 'translateY(-5px) scale(1.02)'; });
-        card.addEventListener('mouseleave', () => { card.style.transform = 'translateY(0) scale(1)'; });
+
+        card.addEventListener('mouseleave', function () {
+            this.style.transform = 'translateY(0) scale(1)';
+        });
+
+        // Click para mostrar modal
+        card.addEventListener('click', async function() {
+            // Obtiene el estado visual mostrado en la card
+            const statusEl = this.querySelector('.document-status');
+            const estado = statusEl ? statusEl.textContent.trim().toUpperCase() : '';
+            console.log('Estado de la solicitud al hacer click:', estado);
+
+            if (estado !== "FIRMADO") {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Atención',
+                    text: 'Solo se pueden ver los detalles de las solicitudes firmadas.',
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'Aceptar'
+                });
+                // No hacer nada si no es FIRMADO
+                return;
+            }
+
+            try {
+                const idSolicitud = this.getAttribute("data-id");
+                selectedDocumentId = idSolicitud;
+
+                console.log('ID Solicitud seleccionada:', selectedDocumentId);
+                
+                if (!idSolicitud) {
+                    console.error('ID de solicitud no encontrado');
+                    return;
+                }
+                
+                showModal();
+                const detallesInfo = modal.querySelector('.detalles-info');
+                detallesInfo.innerHTML = '<p class="loading">Cargando detalles...</p>';
+
+                const response = await fetch(`/api/application/${idSolicitud}`);
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Datos recibidos:', data);
+
+                // Normalizar respuesta
+                let detalles = [];
+                if (Array.isArray(data.detalles)) detalles = data.detalles;
+                else if (Array.isArray(data.details)) detalles = data.details;
+                else if (Array.isArray(data)) detalles = data;
+                else {
+                    for (const k of Object.keys(data || {})) {
+                        if (Array.isArray(data[k])) { detalles = data[k]; break; }
+                    }
+                }
+
+                if (detalles && detalles.length > 0) {
+                    const detallesHtml = detalles.map(det => {
+                        // Determinar la URL y el nombre del documento
+                        const documentUrl = det.url_archivo || det.url || '';
+                        const nombreDocumento = det.nombre_original || 'Documento sin nombre';
+
+                        return `
+                            <div class="detalle-section">
+                                <div class="detalle-header">
+                                    <h3>${nombreDocumento}</h3>
+                                    <span class="fecha">
+                                        ${formatearFecha(det.fecha_firma || det.fecha_solicitud)}
+                                    </span>
+                                </div>  
+                                
+                                <div class="detalle-content">
+                                    <div><p><strong>ID:</strong> <span class="solicitud-id">${det.id_solicitud || ''}</span></p></div>
+                                    <p><strong>ID detalle:</strong> ${det.id_detalle_firmado ?? det.id_registro_detalles ?? det.id_detalle ?? ''}</p>
+                                    <p><strong>Estado:</strong> ${det.estado_documento || det.estado || ''}</p>
+                                    <div class="document-actions">
+                                        <button class="btn-preview" onclick="previewPDF('${documentUrl}')">
+                                            <i class="fas fa-eye"></i> Ver documento
+                                        </button>
+                                        <a href="${documentUrl}" target="_blank" class="btn-download">
+                                            <i class="fas fa-download"></i> Descargar PDF
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    detallesInfo.innerHTML = detallesHtml;
+
+                    // Mostrar el primer documento
+                    if (detalles[0]?.url_archivo || detalles[0]?.url) {
+                        previewPDF(detalles[0].url_archivo || detalles[0].url);
+                    }
+                } else {
+                    detallesInfo.innerHTML = '<p class="no-detalles">No hay detalles disponibles</p>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                const detallesInfo = modal.querySelector('.detalles-info');
+                if (detallesInfo) detallesInfo.innerHTML = `<p class="error-message">Error al cargar los detalles: ${error.message}</p>`;
+            }
+        });
     });
 
-    // cerrar modal
-    if (closeModal) closeModal.onclick = () => { modal.style.display = 'none'; document.body.classList.remove('modal-open'); };
-    window.onclick = (e) => { if (e.target === modal) { modal.style.display = 'none'; document.body.classList.remove('modal-open'); } };
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { modal.style.display = 'none'; document.body.classList.remove('modal-open'); } });
+    // Función para previsualizar PDF
+    window.previewPDF = function (url) {
+        if (!url) {
+            console.error('URL no válida');
+            return;
+        }
+        console.log('Mostrando documento:', url);
+        const wrapper = document.querySelector('.pdf-viewer-wrapper');
+        if (!wrapper) {
+            window.open(url, '_blank');
+            return;
+        }
+        
+        // ocultar iframe existente si hay
+        const existingIframe = wrapper.querySelector('#pdfViewer');
+        if (existingIframe) existingIframe.style.display = 'none';
+
+        // eliminar objeto previo si existe
+        const prevObj = wrapper.querySelector('#pdfObject');
+        if (prevObj) prevObj.remove();
+
+        // crear <object> para renderizar PDF
+        const obj = document.createElement('object');
+        obj.id = 'pdfObject';
+        obj.type = 'application/pdf';
+        obj.data = url;
+        obj.width = '100%';
+        obj.height = '100%'; // <-- 100% para ocupar todo el espacio
+        obj.style.background = '#0f172a';
+        obj.style.display = 'block';
+        obj.style.minHeight = '0';
+        obj.style.minWidth = '0';
+        obj.style.position = 'relative';
+        wrapper.appendChild(obj);
+
+        const pdfNameEl = document.getElementById('pdfName');
+        if (pdfNameEl) pdfNameEl.textContent = '';
+        
+        const pdfFallback = document.getElementById('pdfFallback');
+        if (pdfFallback) pdfFallback.style.display = 'none';
+    };
+
+    // Mostrar y ocultar modal
+    function showModal() {
+        document.body.classList.add('modal-open');
+        modal.style.display = "flex";
+    }
+    
+    function hideModal() {
+        document.body.classList.remove('modal-open');
+        modal.style.display = "none";
+    }
+
+    // Cerrar modal
+    closeBtn.onclick = hideModal;
+
+    window.onclick = (e) => {
+        if (e.target === modal) hideModal();
+    };
+    
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') hideModal();
+    });
+
+    function initializeModal() {
+        const modal = document.getElementById("myModal");
+        document.body.classList.remove('modal-open');
+        modal.style.display = "none";
+    }
+
+    initializeModal();
 });
+
+// Función para inicializar comentarios expandibles
+function initializeExpandableComments() {
+    const commentSections = document.querySelectorAll('.comment-section');
+    
+    commentSections.forEach(section => {
+        // Verificar si hay contenido en los comentarios
+        const commentContent = section.querySelector('.comment-content');
+        const commentEmpty = section.querySelector('.comment-empty');
+        const hasContent = commentContent && commentContent.textContent.trim() !== '';
+        
+        // Si no hay contenido, no agregar el toggle
+        if (!hasContent) return;
+        
+        // Obtener el texto del comentario
+        const commentText = commentContent ? commentContent.textContent.trim() : '';
+        
+        // Crear botón toggle
+        const toggleBtn = document.createElement('button');
+        toggleBtn.classList.add('comment-toggle');
+        toggleBtn.textContent = 'Ver más';
+        toggleBtn.setAttribute('aria-expanded', 'false');
+        toggleBtn.setAttribute('aria-label', 'Expandir comentarios');
+        
+        // Agregar botón al header
+        const header = section.querySelector('.comment-header');
+        if (header) {
+            header.appendChild(toggleBtn);
+        }
+        
+        // Agregar evento click al botón para abrir modal
+        toggleBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            openCommentModal(commentText);
+        });
+        
+        // Agregar evento click a la sección también
+        section.addEventListener('click', function(e) {
+            // Solo si no hizo click en el botón
+            if (e.target !== toggleBtn) {
+                toggleBtn.click();
+            }
+        });
+    });
+}
+
+// Función para abrir modal de comentarios
+function openCommentModal(commentText) {
+    // Crear modal si no existe
+    let modal = document.getElementById('commentModal');
+    
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'commentModal';
+        modal.className = 'comment-modal';
+        modal.innerHTML = `
+            <div class="comment-modal-content">
+                <div class="comment-modal-header">
+                    <h3>Comentarios</h3>
+                    <button class="comment-modal-close" id="commentModalClose">&times;</button>
+                </div>
+                <div class="comment-modal-body" id="commentModalBody"></div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        // Evento para cerrar
+        document.getElementById('commentModalClose').addEventListener('click', closeCommentModal);
+        
+        // Cerrar al hacer clic fuera del modal
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeCommentModal();
+            }
+        });
+        
+        // Cerrar con ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.classList.contains('show')) {
+                closeCommentModal();
+            }
+        });
+    }
+    
+    // Mostrar el comentario
+    document.getElementById('commentModalBody').textContent = commentText;
+    modal.classList.add('show');
+}
+
+// Función para cerrar modal de comentarios
+function closeCommentModal() {
+    const modal = document.getElementById('commentModal');
+    if (modal) {
+        modal.classList.remove('show');
+    }
+}
+
+// fuera de document.addEventListener(...)
+function signAllDocuments() {
+    console.log('Intentando firmar documentos. ID seleccionado:', selectedDocumentId);
+    
+    if (!selectedDocumentId) {
+        alert('Por favor, seleccione una solicitud para firmar');
+        return;
+    }
+
+    const data = {
+        "selectedFormat": "A4",
+        "COORDS": {
+            "A4": {
+                "pageIndex": 0,
+                "x": 100,
+                "y": 100,
+                "width": 160
+            }
+        }
+    };
+
+    console.log('Enviando solicitud de firma para ID:', selectedDocumentId);
+
+    fetch(`/api/pending/${selectedDocumentId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    
+    .then(response => response.json())
+    .then(data => {
+        if (data.message==='Proceso de firma completado') {
+            Swal.fire({
+                icon: 'success',
+                title: 'Éxito',
+                text: data.message,
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'Aceptar'
+            }).then(() => {
+                window.location.reload();
+            });
+           
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.message || 'Error al firmar los documentos'
+            });
+            
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al procesar la firma de documentos');
+    });
+}
+
+function rejectApplication() {
+    console.log('Intentando rechazar solicitud. ID seleccionado:', selectedDocumentId);
+    if (!selectedDocumentId) {
+        alert('Por favor, seleccione una solicitud para rechazar');
+        return;
+    }   
+    fetch(`/api/pending/${selectedDocumentId}/rechazar`, {
+        method: 'POST'
+    })
+    .then(response => {
+        if (response.ok) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Éxito',
+                text: 'La solicitud ha sido rechazada',
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'Aceptar'
+            }).then(() => {
+                window.location.reload();
+            });
+        } else {
+            throw new Error('Error al rechazar la solicitud');
+        }   
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al procesar el rechazo de la solicitud');
+    });
+}
