@@ -22,16 +22,39 @@ async function applicationRender(req, res) {
     let applicationDocs = [];
     if (userId) {
       applicationDocs = await getApplicationsByUser(userId);
+      
+      // Enriquecer cada documento con la fecha correcta según el estado
+      applicationDocs = applicationDocs.map(doc => {
+        const estado = (doc.estado_solicitud || '').toString().toUpperCase();
+        
+        let fechaAMostrar = null;
+        let etiquetaFecha = 'Fecha de solicitud: ';
+        
+        if (estado === 'FIRMADO') {
+          fechaAMostrar = doc.fecha_firma;
+          etiquetaFecha = 'Fecha de firma: ';
+        } else if (estado === 'RECHAZADO') {
+          fechaAMostrar = doc.fecha_rechazo;
+          etiquetaFecha = 'Fecha de rechazo: ';
+        } else {
+          fechaAMostrar = doc.fecha_solicitud;
+          etiquetaFecha = 'Fecha de solicitud: ';
+        }
+        
+        return {
+          ...doc,
+          fechaAMostrar: fechaAMostrar,
+          etiquetaFecha: etiquetaFecha,
+          estado_solicitud: estado
+        };
+      });
     } else {
       console.warn('applicationRender: no hay usuario logueado o id_registro_usuarios vacío');
     }
     const pendingData = await countPendingandSigned(userId);
-    // Priorizar el firmante obtenido de applicationDocs (si existe), si no usar el de pendingData
-
 
     const statusCounts = countApplicationStatus(applicationDocs);
-    // console.log('statusCounts:', statusCounts);
-
+  
     res.render('application/views/applicationIndex', { 
       applicationDocs,
       pendingDocuments: pendingData?.pendientes || 0,
@@ -43,7 +66,11 @@ async function applicationRender(req, res) {
       countPending: statusCounts.PENDIENTE,
       countRejected: statusCounts.RECHAZADO,
       countOthers: statusCounts.OTROS,
-      countTotal: statusCounts.total
+      countTotal: statusCounts.total,
+      fecha_solicitud: applicationDocs[0]?.fecha_solicitud || null,
+      fecha_firma: applicationDocs[0]?.fecha_firma || null,
+      fecha_rechazo: applicationDocs[0]?.fecha_rechazo || null
+    
     });
     
   } catch (error) {

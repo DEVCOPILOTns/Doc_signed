@@ -359,29 +359,102 @@ function signAllDocuments() {
 function rejectApplication() {
     console.log('Intentando rechazar solicitud. ID seleccionado:', selectedDocumentId);
     if (!selectedDocumentId) {
-        alert('Por favor, seleccione una solicitud para rechazar');
+        Swal.fire({
+            icon: 'warning',
+            title: 'Atención',
+            text: 'Por favor, seleccione una solicitud para rechazar',
+            confirmButtonColor: '#3085d6',
+            confirmButtonText: 'Aceptar'
+        });
         return;
-    }   
-    fetch(`/api/pending/${selectedDocumentId}/rechazar`, {
-        method: 'POST'
-    })
-    .then(response => {
-        if (response.ok) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Éxito',
-                text: 'La solicitud ha sido rechazada',
-                confirmButtonColor: '#3085d6',
-                confirmButtonText: 'Aceptar'
-            }).then(() => {
-                window.location.reload();
+    }
+
+    // Mostrar modal de confirmación con campo de comentario
+    Swal.fire({
+        title: '¿Rechazar solicitud?',
+        html: `
+            <div style="text-align: left;">
+                <p style="margin-bottom: 15px; color: #666;">
+                    <strong>⚠️ Advertencia:</strong> Estás a punto de rechazar esta solicitud. 
+                    Esta acción no se puede deshacer.
+                </p>
+                <label for="motivoRechazo" style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">
+                    Motivo del rechazo <span style="color: red;">*</span>
+                </label>
+                <textarea 
+                    id="motivoRechazo" 
+                    class="swal2-textarea" 
+                    placeholder="Ingresa el motivo por el cual rechazas esta solicitud..."
+                    style="width: 100%; height: 120px; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-family: inherit; font-size: 14px; resize: vertical;">
+                </textarea>
+                <div id="errorMotivo" style="color: #fb6f6f; font-size: 12px; margin-top: 5px; display: none;">
+                    El motivo del rechazo es obligatorio
+                </div>
+            </div>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#fb6f6f',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Rechazar',
+        cancelButtonText: 'Cancelar',
+        didOpen: function() {
+            // Enfocar el textarea automáticamente
+            const textarea = document.getElementById('motivoRechazo');
+            if (textarea) {
+                textarea.focus();
+            }
+        },
+        preConfirm: function() {
+            const motivo = document.getElementById('motivoRechazo').value.trim();
+            const errorDiv = document.getElementById('errorMotivo');
+            
+            if (!motivo) {
+                errorDiv.style.display = 'block';
+                return false;
+            }
+            
+            return motivo;
+        }
+    }).then((result) => {
+        if (result.isConfirmed && result.value) {
+            // Proceder con el rechazo
+            const motivo = result.value;
+            
+            fetch(`/api/pending/${selectedDocumentId}/rechazar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    motivo: motivo
+                })
+            })
+            .then(response => {
+                if (response.ok) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Éxito',
+                        text: 'La solicitud ha sido rechazada correctamente',
+                        confirmButtonColor: '#3085d6',
+                        confirmButtonText: 'Aceptar'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    throw new Error('Error al rechazar la solicitud');
+                }   
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error al procesar el rechazo de la solicitud',
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'Aceptar'
+                });
             });
-        } else {
-            throw new Error('Error al rechazar la solicitud');
-        }   
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error al procesar el rechazo de la solicitud');
+        }
     });
 }

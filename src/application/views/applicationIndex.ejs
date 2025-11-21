@@ -107,20 +107,24 @@
                                     <div>
                                         <div class="document-title">ID: <%= id %></div>
                                         <div class="document-date">
-                                            <%= estado === 'FIRMADO' ? 'Fecha de firma: ' : 'Fecha de solicitud: ' %>
-                                            <%= (() => {
-                                                const fecha = new Date(fechaRaw || new Date().toISOString());
-                                                fecha.setHours(fecha.getHours() + 5);
-                                                return fecha.toLocaleString('es-CO', {
-                                                    year: 'numeric',
-                                                    month: '2-digit',
-                                                    day: '2-digit',
-                                                    hour: '2-digit',
-                                                    minute: '2-digit',
-                                                    hour12: true,
-                                                    timeZone: 'America/Bogota'
-                                                });
-                                            })() %>
+                                            <% if (doc.fechaAMostrar) { %>
+                                                <%= doc.etiquetaFecha %>
+                                                <%= (() => {
+                                                    const fecha = new Date(doc.fechaAMostrar);
+                                                    fecha.setHours(fecha.getHours() + 5);
+                                                    return fecha.toLocaleString('es-CO', {
+                                                        year: 'numeric',
+                                                        month: '2-digit',
+                                                        day: '2-digit',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit',
+                                                        hour12: true,
+                                                        timeZone: 'America/Bogota'
+                                                    });
+                                                })() %>
+                                            <% } else { %>
+                                                <%= doc.etiquetaFecha %> NULL
+                                            <% } %>
                                         </div>
                                     </div>
                                     <% const estadoClass = 'status-' + (estado || '').replace(/\s+/g, '_'); %>
@@ -135,7 +139,7 @@
                                 <div class="firmante-line">
                                     <strong>Firmante:</strong> <%= firmanteName %>
                                 </div>
-
+                                
                                 <div class="comment-section">
                                     <div class="comment-header">
                                         <div class="comment-icon">

@@ -152,16 +152,22 @@ async function createDocumentSigned(url, formato, idFirmante, idDetalleSolicitud
     }
 }
 
-async function changeStateApplication(idSolicitud, newState) {
+async function changeStateApplication(idSolicitud, newState, motivo) {
     try {
         const pool = await config.poolPromise;
         const result = await pool.request()
             .input('idSolicitud', sql.Int, idSolicitud)
             .input('newState', sql.VarChar, newState)
+            .input('motivo', sql.VarChar, motivo)
             .query(`
                 UPDATE solicitudes 
-                SET estado_solicitud = @newState
-                WHERE id_registro_solicitud = @idSolicitud
+                SET estado_solicitud = @newState,
+                motivo_rechazo = @motivo,
+                fecha_firma = CASE WHEN @newState = 'FIRMADO' THEN GETDATE() ELSE fecha_firma END,
+                fecha_rechazo = CASE WHEN @newState = 'RECHAZADO' THEN GETDATE() ELSE fecha_rechazo END
+                WHERE id_registro_solicitud = @idSolicitud 
+                
+                
             `);
         return result;
     } catch (error) {

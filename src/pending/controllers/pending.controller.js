@@ -221,7 +221,7 @@ async function signAllDocuments(req, res) {
 
             // Actualizar estado si todo fue exitoso
             if (resultados.every(r => r.firmado)) {
-                await changeStateApplication(userInfo.selectedDocumentId, 'FIRMADO');
+                await changeStateApplication(userInfo.selectedDocumentId, 'FIRMADO' );
             }
 
             return res.status(200).json({
@@ -259,7 +259,40 @@ async function signAllDocuments(req, res) {
 }
 
 async function rejectApplication(req, res) {
-    await changeStateApplication(req.params.selectedDocumentId, 'RECHAZADO');
+    try {
+        const { selectedDocumentId } = req.params;
+        const { motivo } = req.body;
+        
+        if (!selectedDocumentId) {
+            return res.status(400).json({ 
+                message: 'ID de solicitud no proporcionado' 
+            });
+        }
+
+        if (!motivo || motivo.trim() === '') {
+            return res.status(400).json({ 
+                message: 'El motivo del rechazo es obligatorio' 
+            });
+        }
+
+        // Cambiar estado a RECHAZADO
+        await changeStateApplication(selectedDocumentId, 'RECHAZADO', motivo);
+        
+        // Aquí puedes guardar el motivo del rechazo si lo necesitas
+        console.log(`Solicitud ${selectedDocumentId} rechazada. Motivo: ${motivo}`);
+        
+        return res.status(200).json({ 
+            message: 'Solicitud rechazada correctamente',
+            idSolicitud: selectedDocumentId,
+            motivo: motivo
+        });
+    } catch (error) {
+        console.error('Error al rechazar solicitud:', error);
+        return res.status(500).json({
+            message: 'Error al rechazar la solicitud',
+            error: error.message
+        });
+    }
 }
 
 module.exports = {
