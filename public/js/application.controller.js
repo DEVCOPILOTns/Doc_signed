@@ -397,3 +397,396 @@ function rejectApplication() {
         alert('Error al procesar el rechazo de la solicitud');
     });
 }
+
+// ============= PAGINACIÓN =============
+let currentPage = 1;
+let itemsPerPage = 8;
+let allItems = [];
+let filteredItems = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Pequeña pausa para asegurar que el DOM esté completamente listo
+    setTimeout(() => {
+        initializePagination();
+        attachFilterListeners();
+    }, 100);
+});
+
+function attachFilterListeners() {
+    const searchInput = document.getElementById('searchInput');
+    const statusFilter = document.getElementById('statusFilter');
+    const dateFilter = document.getElementById('dateFilter');
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            console.log('Evento input en búsqueda');
+            applyFilters();
+        });
+    }
+    
+    if (statusFilter) {
+        statusFilter.addEventListener('change', function() {
+            console.log('Evento change en estado');
+            applyFilters();
+        });
+    }
+    
+    if (dateFilter) {
+        dateFilter.addEventListener('change', function() {
+            console.log('Evento change en fecha');
+            applyFilters();
+        });
+    }
+}
+
+function initializePagination() {
+    // Obtener todos los items del grid
+    allItems = Array.from(document.querySelectorAll('.documents-grid .page-item'));
+    
+    console.log('=== INICIALIZAR PAGINACIÓN ===');
+    console.log('Total items encontrados:', allItems.length);
+    
+    if (allItems.length === 0) {
+        console.log('No hay items para paginar');
+        const paginationContainer = document.getElementById('paginationContainer');
+        if (paginationContainer) {
+            paginationContainer.style.display = 'none';
+        }
+        const resultsCount = document.getElementById('resultsCount');
+        if (resultsCount) {
+            resultsCount.textContent = 'No hay solicitudes para mostrar';
+        }
+        return;
+    }
+    
+    console.log('Items per page:', itemsPerPage);
+    console.log('Total páginas:', Math.ceil(allItems.length / itemsPerPage));
+    
+    // Inicializar filtros - todos los items visibles al inicio
+    filteredItems = [...allItems];
+    currentPage = 1;
+    
+    // Resetear los filtros a su estado inicial
+    const searchInput = document.getElementById('searchInput');
+    const statusFilter = document.getElementById('statusFilter');
+    const dateFilter = document.getElementById('dateFilter');
+    
+    if (searchInput) searchInput.value = '';
+    if (statusFilter) statusFilter.value = 'TODOS';
+    if (dateFilter) dateFilter.value = 'all';
+    
+    // Mostrar la primera página
+    updateResultsCount();
+    showPage(1);
+    generatePaginationControls();
+}
+
+function applyFilters() {
+    const searchInput = document.getElementById('searchInput');
+    const statusFilter = document.getElementById('statusFilter');
+    const dateFilter = document.getElementById('dateFilter');
+    
+    const searchTerm = (searchInput?.value || '').toLowerCase().trim();
+    const statusValue = statusFilter?.value || 'TODOS';
+    const dateValue = dateFilter?.value || 'all';
+    
+    console.log('=== APLICAR FILTROS ===');
+    console.log('Búsqueda:', searchTerm);
+    console.log('Estado:', statusValue);
+    console.log('Fecha:', dateValue);
+    console.log('Total items antes de filtro:', allItems.length);
+    
+    // Filtrar items basado en criterios
+    filteredItems = allItems.filter(item => {
+        // Filtro de búsqueda
+        if (searchTerm) {
+            const id = item.getAttribute('data-id') || '';
+            const titleEl = item.querySelector('.document-title');
+            const titleText = titleEl ? titleEl.textContent.toLowerCase() : '';
+            const userEl = item.querySelector('.document-user');
+            const userText = userEl ? userEl.textContent.toLowerCase() : '';
+            
+            const matches = id.toLowerCase().includes(searchTerm) || 
+                           titleText.includes(searchTerm) || 
+                           userText.includes(searchTerm);
+            if (!matches) {
+                console.log(`Item ${id} no coincide con búsqueda`);
+                return false;
+            }
+        }
+        
+        // Filtro de estado
+        if (statusValue !== 'TODOS') {
+            const statusEl = item.querySelector('.document-status');
+            const estado = statusEl ? statusEl.textContent.trim().toUpperCase() : '';
+            
+            console.log(`Verificando estado: "${estado}" contra filtro "${statusValue}"`);
+            
+            let stateMatches = false;
+            if (statusValue === 'PENDIENTE') stateMatches = estado === 'PENDIENTE';
+            else if (statusValue === 'FIRMADO') stateMatches = estado === 'FIRMADO';
+            else if (statusValue === 'RECHAZADO') stateMatches = estado === 'RECHAZADO';
+            
+            if (!stateMatches) {
+                console.log(`Item estado "${estado}" no coincide con filtro "${statusValue}"`);
+                return false;
+            }
+        }
+        
+        // Filtro de fecha
+        if (dateValue !== 'all') {
+            const dateEl = item.querySelector('.document-date');
+            if (dateEl) {
+                const dateText = dateEl.textContent;
+                // Extraer solo la parte de la fecha (ignorar etiquetas)
+                const dateMatch = dateText.match(/(\d{2}\/\d{2}\/\d{4})/);
+                if (dateMatch) {
+                    const itemDate = new Date(dateMatch[1].split('/').reverse().join('-'));
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    
+                    let isInRange = false;
+                    
+                    if (dateValue === 'today') {
+                        itemDate.setHours(0, 0, 0, 0);
+                        isInRange = itemDate.getTime() === today.getTime();
+                    } else if (dateValue === 'week') {
+                        const weekAgo = new Date(today);
+                        weekAgo.setDate(weekAgo.getDate() - 7);
+                        isInRange = itemDate >= weekAgo && itemDate <= today;
+                    } else if (dateValue === 'month') {
+                        const monthAgo = new Date(today);
+                        monthAgo.setDate(monthAgo.getDate() - 30);
+                        isInRange = itemDate >= monthAgo && itemDate <= today;
+                    }
+                    
+                    if (!isInRange) {
+                        console.log(`Item fecha "${dateText}" no está en rango`);
+                        return false;
+                    }
+                }
+            }
+        }
+        
+        return true;
+    });
+    
+    console.log('Items filtrados:', filteredItems.length);
+    
+    // Reiniciar a la primera página
+    currentPage = 1;
+    updateResultsCount();
+    showPage(1);
+    generatePaginationControls();
+}
+
+function showPage(pageNumber) {
+    if (pageNumber < 1 || pageNumber > Math.ceil(filteredItems.length / itemsPerPage)) {
+        console.warn('Número de página inválido:', pageNumber);
+        return;
+    }
+    
+    currentPage = pageNumber;
+    
+    // Calcular índices
+    const startIndex = (pageNumber - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    
+    console.log(`=== MOSTRAR PÁGINA ${pageNumber} ===`);
+    console.log(`Mostrando items ${startIndex} a ${endIndex - 1} de ${filteredItems.length}`);
+    
+    // Primero, ocultar TODOS los items del DOM actual
+    const allCurrentItems = Array.from(document.querySelectorAll('.documents-grid .page-item'));
+    console.log('Items en el DOM:', allCurrentItems.length);
+    
+    allCurrentItems.forEach((item) => {
+        item.style.display = 'none';
+    });
+    
+    // Obtener los items a mostrar en esta página
+    const itemsToShow = filteredItems.slice(startIndex, endIndex);
+    console.log(`Items a mostrar en esta página: ${itemsToShow.length}`);
+    
+    // Mostrar solo los items de esta página
+    itemsToShow.forEach((item, index) => {
+        item.style.display = 'block';
+        const itemId = item.getAttribute('data-id');
+        console.log(`  - Mostrando item ${startIndex + index}: ID=${itemId}`);
+    });
+    
+    // Actualizar información de paginación
+    updatePaginationInfo(startIndex, endIndex, filteredItems.length);
+    
+    // Scroll hacia arriba
+    document.documentElement.scrollTop = 0;
+}
+
+function generatePaginationControls() {
+    const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+    const paginationList = document.getElementById('paginationList');
+    
+    if (!paginationList) {
+        console.error('paginationList no encontrado');
+        return;
+    }
+    
+    paginationList.innerHTML = '';
+    
+    console.log(`Generando controles de paginación: ${totalPages} páginas`);
+    
+    // Si no hay páginas o solo 1 página, ocultar paginación
+    if (totalPages <= 1) {
+        const paginationContainer = document.getElementById('paginationContainer');
+        if (paginationContainer) {
+            paginationContainer.style.display = 'none';
+        }
+        return;
+    }
+    
+    const paginationContainer = document.getElementById('paginationContainer');
+    if (paginationContainer) {
+        paginationContainer.style.display = 'flex';
+    }
+    
+    // Botón anterior
+    const prevLi = document.createElement('li');
+    prevLi.className = currentPage === 1 ? 'disabled' : '';
+    const prevLink = document.createElement('a');
+    prevLink.href = '#';
+    prevLink.innerHTML = '&laquo; Anterior';
+    prevLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (currentPage > 1) {
+            console.log('Click botón anterior');
+            showPage(currentPage - 1);
+            generatePaginationControls();
+        }
+    });
+    prevLi.appendChild(prevLink);
+    paginationList.appendChild(prevLi);
+    
+    // Números de página
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, currentPage + 2);
+    
+    // Mostrar "1" si startPage > 1
+    if (startPage > 1) {
+        const firstLi = document.createElement('li');
+        const firstLink = document.createElement('a');
+        firstLink.href = '#';
+        firstLink.textContent = '1';
+        firstLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Click página 1');
+            showPage(1);
+            generatePaginationControls();
+        });
+        firstLi.appendChild(firstLink);
+        paginationList.appendChild(firstLi);
+        
+        // Mostrar "..." si hay salto
+        if (startPage > 2) {
+            const dotsLi = document.createElement('li');
+            dotsLi.className = 'disabled';
+            dotsLi.innerHTML = '<span>...</span>';
+            paginationList.appendChild(dotsLi);
+        }
+    }
+    
+    // Números de página visibles
+    for (let i = startPage; i <= endPage; i++) {
+        const li = document.createElement('li');
+        if (i === currentPage) {
+            li.className = 'active';
+            const span = document.createElement('span');
+            span.textContent = i;
+            li.appendChild(span);
+        } else {
+            const link = document.createElement('a');
+            link.href = '#';
+            link.textContent = i;
+            link.addEventListener('click', (function(pageNum) {
+                return function(e) {
+                    e.preventDefault();
+                    console.log('Click página', pageNum);
+                    showPage(pageNum);
+                    generatePaginationControls();
+                };
+            })(i));
+            li.appendChild(link);
+        }
+        paginationList.appendChild(li);
+    }
+    
+    // Mostrar "..." y última página si hay salto
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            const dotsLi = document.createElement('li');
+            dotsLi.className = 'disabled';
+            dotsLi.innerHTML = '<span>...</span>';
+            paginationList.appendChild(dotsLi);
+        }
+        
+        const lastLi = document.createElement('li');
+        const lastLink = document.createElement('a');
+        lastLink.href = '#';
+        lastLink.textContent = totalPages;
+        lastLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Click última página:', totalPages);
+            showPage(totalPages);
+            generatePaginationControls();
+        });
+        lastLi.appendChild(lastLink);
+        paginationList.appendChild(lastLi);
+    }
+    
+    // Botón siguiente
+    const nextLi = document.createElement('li');
+    nextLi.className = currentPage === totalPages ? 'disabled' : '';
+    const nextLink = document.createElement('a');
+    nextLink.href = '#';
+    nextLink.innerHTML = 'Siguiente &raquo;';
+    nextLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (currentPage < totalPages) {
+            console.log('Click botón siguiente');
+            showPage(currentPage + 1);
+            generatePaginationControls();
+        }
+    });
+    nextLi.appendChild(nextLink);
+    paginationList.appendChild(nextLi);
+}
+
+function updatePaginationInfo(startIndex, endIndex, total) {
+    const info = document.getElementById('paginationInfo');
+    if (info) {
+        const showing = Math.min(endIndex, total);
+        const display = total === 0 ? 'Mostrando 0 de 0 solicitudes' : `Mostrando ${startIndex + 1} - ${showing} de ${total} solicitudes`;
+        info.textContent = display;
+    }
+}
+
+function updateResultsCount() {
+    const resultsCount = document.getElementById('resultsCount');
+    if (resultsCount) {
+        const filtered = filteredItems.length;
+        const total = allItems.length;
+        
+        if (filtered === total) {
+            resultsCount.textContent = `Mostrando ${filtered} solicitudes`;
+        } else {
+            resultsCount.textContent = `Mostrando ${filtered} de ${total} solicitudes (filtradas)`;
+        }
+        
+        console.log(`Resultados: ${filtered} de ${total}`);
+    }
+}
+
+function changeItemsPerPage(value) {
+    itemsPerPage = parseInt(value);
+    currentPage = 1;
+    showPage(1);
+    generatePaginationControls();
+}

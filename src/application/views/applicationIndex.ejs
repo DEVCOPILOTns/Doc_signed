@@ -70,7 +70,7 @@
                     <select id="statusFilter" class="select-filter">
                         <option value="TODOS">Todos los estados</option>
                         <option value="PENDIENTE">Pendiente</option>
-                        <option value="APROBADO">Aprobado</option>
+                        <option value="FIRMADO">Firmado</option>
                         <option value="RECHAZADO">Rechazado</option>
                     </select>
 
@@ -102,7 +102,7 @@
                             const firmanteName = doc.nombre_firmante || doc.firmante || ('Firmante ' + (doc.id_firmante || 'N/A'));
                             const firmanteId = doc.id_firmante || null;
                         %>
-                            <div class="document-card" data-id="<%= id %>">
+                            <div class="document-card page-item" data-id="<%= id %>">
                                 <div class="document-header">
                                     <div>
                                         <div class="document-title">ID: <%= id %></div>
@@ -165,6 +165,14 @@
                      <% } %>
                 </div>
             </div>
+
+            <!-- Pagination -->
+            <div class="pagination-container" id="paginationContainer">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination" id="paginationList"></ul>
+                </nav>
+            </div>
+            <div class="pagination-info" id="paginationInfo"></div>
         </div>
     </div>
 

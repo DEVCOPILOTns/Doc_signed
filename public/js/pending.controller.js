@@ -458,3 +458,231 @@ function rejectApplication() {
         }
     });
 }
+
+// ============= PAGINACIÓN PARA PENDING =============
+let currentPagePending = 1;
+let itemsPerPagePending = 6;
+let allItemsPending = [];
+let filteredItemsPending = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        initializePaginationPending();
+    }, 100);
+});
+
+function initializePaginationPending() {
+    // Obtener todos los items del grid
+    allItemsPending = Array.from(document.querySelectorAll('.documents-grid .document-card'));
+    
+    console.log('=== INICIALIZAR PAGINACIÓN PENDING ===');
+    console.log('Total items encontrados:', allItemsPending.length);
+    
+    if (allItemsPending.length === 0) {
+        console.log('No hay items para paginar');
+        const paginationContainer = document.getElementById('paginationContainerPending');
+        if (paginationContainer) {
+            paginationContainer.style.display = 'none';
+        }
+        return;
+    }
+    
+    console.log('Items per page:', itemsPerPagePending);
+    console.log('Total páginas:', Math.ceil(allItemsPending.length / itemsPerPagePending));
+    
+    // Inicializar filtros - todos los items visibles al inicio
+    filteredItemsPending = [...allItemsPending];
+    currentPagePending = 1;
+    
+    // Mostrar la primera página
+    showPagePending(1);
+    generatePaginationControlsPending();
+}
+
+function showPagePending(pageNumber) {
+    if (pageNumber < 1 || pageNumber > Math.ceil(filteredItemsPending.length / itemsPerPagePending)) {
+        console.warn('Número de página inválido:', pageNumber);
+        return;
+    }
+    
+    currentPagePending = pageNumber;
+    
+    // Calcular índices
+    const startIndex = (pageNumber - 1) * itemsPerPagePending;
+    const endIndex = startIndex + itemsPerPagePending;
+    
+    console.log(`=== MOSTRAR PÁGINA ${pageNumber} PENDING ===`);
+    console.log(`Mostrando items ${startIndex} a ${endIndex - 1} de ${filteredItemsPending.length}`);
+    
+    // Primero, ocultar TODOS los items del DOM actual
+    const allCurrentItems = Array.from(document.querySelectorAll('.documents-grid .document-card'));
+    console.log('Items en el DOM:', allCurrentItems.length);
+    
+    allCurrentItems.forEach((item) => {
+        item.style.display = 'none';
+    });
+    
+    // Obtener los items a mostrar en esta página
+    const itemsToShow = filteredItemsPending.slice(startIndex, endIndex);
+    console.log(`Items a mostrar en esta página: ${itemsToShow.length}`);
+    
+    // Mostrar solo los items de esta página
+    itemsToShow.forEach((item, index) => {
+        item.style.display = 'block';
+        const itemId = item.getAttribute('data-id');
+        console.log(`  - Mostrando item ${startIndex + index}: ID=${itemId}`);
+    });
+    
+    // Actualizar información de paginación
+    updatePaginationInfoPending(startIndex, endIndex, filteredItemsPending.length);
+    
+    // Scroll hacia arriba
+    document.documentElement.scrollTop = 0;
+}
+
+function generatePaginationControlsPending() {
+    const totalPages = Math.ceil(filteredItemsPending.length / itemsPerPagePending);
+    const paginationList = document.getElementById('paginationListPending');
+    
+    if (!paginationList) {
+        console.error('paginationListPending no encontrado');
+        return;
+    }
+    
+    paginationList.innerHTML = '';
+    
+    console.log(`Generando controles de paginación: ${totalPages} páginas`);
+    
+    // Si no hay páginas o solo 1 página, ocultar paginación
+    if (totalPages <= 1) {
+        const paginationContainer = document.getElementById('paginationContainerPending');
+        if (paginationContainer) {
+            paginationContainer.style.display = 'none';
+        }
+        return;
+    }
+    
+    const paginationContainer = document.getElementById('paginationContainerPending');
+    if (paginationContainer) {
+        paginationContainer.style.display = 'flex';
+    }
+    
+    // Botón anterior
+    const prevLi = document.createElement('li');
+    prevLi.className = currentPagePending === 1 ? 'disabled' : '';
+    const prevLink = document.createElement('a');
+    prevLink.href = '#';
+    prevLink.innerHTML = '&laquo; Anterior';
+    prevLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (currentPagePending > 1) {
+            console.log('Click botón anterior');
+            showPagePending(currentPagePending - 1);
+            generatePaginationControlsPending();
+        }
+    });
+    prevLi.appendChild(prevLink);
+    paginationList.appendChild(prevLi);
+    
+    // Números de página
+    let startPage = Math.max(1, currentPagePending - 2);
+    let endPage = Math.min(totalPages, currentPagePending + 2);
+    
+    // Mostrar "1" si startPage > 1
+    if (startPage > 1) {
+        const firstLi = document.createElement('li');
+        const firstLink = document.createElement('a');
+        firstLink.href = '#';
+        firstLink.textContent = '1';
+        firstLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Click página 1');
+            showPagePending(1);
+            generatePaginationControlsPending();
+        });
+        firstLi.appendChild(firstLink);
+        paginationList.appendChild(firstLi);
+        
+        // Mostrar "..." si hay salto
+        if (startPage > 2) {
+            const dotsLi = document.createElement('li');
+            dotsLi.className = 'disabled';
+            dotsLi.innerHTML = '<span>...</span>';
+            paginationList.appendChild(dotsLi);
+        }
+    }
+    
+    // Números de página visibles
+    for (let i = startPage; i <= endPage; i++) {
+        const li = document.createElement('li');
+        if (i === currentPagePending) {
+            li.className = 'active';
+            const span = document.createElement('span');
+            span.textContent = i;
+            li.appendChild(span);
+        } else {
+            const link = document.createElement('a');
+            link.href = '#';
+            link.textContent = i;
+            link.addEventListener('click', (function(pageNum) {
+                return function(e) {
+                    e.preventDefault();
+                    console.log('Click página', pageNum);
+                    showPagePending(pageNum);
+                    generatePaginationControlsPending();
+                };
+            })(i));
+            li.appendChild(link);
+        }
+        paginationList.appendChild(li);
+    }
+    
+    // Mostrar "..." y última página si hay salto
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            const dotsLi = document.createElement('li');
+            dotsLi.className = 'disabled';
+            dotsLi.innerHTML = '<span>...</span>';
+            paginationList.appendChild(dotsLi);
+        }
+        
+        const lastLi = document.createElement('li');
+        const lastLink = document.createElement('a');
+        lastLink.href = '#';
+        lastLink.textContent = totalPages;
+        lastLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Click última página:', totalPages);
+            showPagePending(totalPages);
+            generatePaginationControlsPending();
+        });
+        lastLi.appendChild(lastLink);
+        paginationList.appendChild(lastLi);
+    }
+    
+    // Botón siguiente
+    const nextLi = document.createElement('li');
+    nextLi.className = currentPagePending === totalPages ? 'disabled' : '';
+    const nextLink = document.createElement('a');
+    nextLink.href = '#';
+    nextLink.innerHTML = 'Siguiente &raquo;';
+    nextLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (currentPagePending < totalPages) {
+            console.log('Click botón siguiente');
+            showPagePending(currentPagePending + 1);
+            generatePaginationControlsPending();
+        }
+    });
+    nextLi.appendChild(nextLink);
+    paginationList.appendChild(nextLi);
+}
+
+function updatePaginationInfoPending(startIndex, endIndex, total) {
+    const info = document.getElementById('paginationInfoPending');
+    if (info) {
+        const showing = Math.min(endIndex, total);
+        const display = total === 0 ? 'Mostrando 0 de 0 solicitudes' : `Mostrando ${startIndex + 1} - ${showing} de ${total} solicitudes`;
+        info.textContent = display;
+    }
+}

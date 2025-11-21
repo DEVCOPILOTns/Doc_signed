@@ -246,6 +246,122 @@
             font-weight: 500;
         }
 
+        /* Pagination Styles */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 48px;
+            padding: 32px 0;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .pagination li {
+            display: inline-flex;
+        }
+
+        .pagination a, .pagination span {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            height: 40px;
+            padding: 8px 12px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #475569;
+            text-decoration: none;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            background: white;
+        }
+
+        .pagination a:hover {
+            border-color: #06b6d4;
+            color: #06b6d4;
+            background: rgba(6, 182, 212, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .pagination .active a,
+        .pagination .active span {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            color: white;
+            border-color: #0891b2;
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.25);
+        }
+
+        .pagination .disabled a,
+        .pagination .disabled span {
+            color: #cbd5e1;
+            border-color: #e2e8f0;
+            cursor: not-allowed;
+            background: #f8fafc;
+        }
+
+        .pagination .disabled a:hover,
+        .pagination .disabled span:hover {
+            transform: none;
+            color: #cbd5e1;
+            background: #f8fafc;
+        }
+
+        .pagination-info {
+            text-align: center;
+            margin-top: 24px;
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .items-per-page-selector {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .items-per-page-selector label {
+            font-size: 14px;
+            color: #475569;
+            font-weight: 600;
+        }
+
+        .items-per-page-selector select {
+            padding: 8px 12px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            color: #1e293b;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 600;
+        }
+
+        .items-per-page-selector select:hover {
+            border-color: #06b6d4;
+        }
+
+        .items-per-page-selector select:focus {
+            outline: none;
+            border-color: #06b6d4;
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+        }
+
         /* Documents Grid */
         .documents-grid {
             display: grid;
@@ -905,6 +1021,26 @@
             .select-filter {
                 width: 100%;
             }
+
+            .pagination {
+                gap: 4px;
+            }
+
+            .pagination a, .pagination span {
+                min-width: 36px;
+                height: 36px;
+                padding: 6px 10px;
+                font-size: 13px;
+            }
+
+            .items-per-page-selector {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .items-per-page-selector select {
+                width: 100%;
+            }
         }
 
         @media (max-width: 1400px) {
@@ -920,4 +1056,27 @@
         @media (max-width: 480px) {
             .documents-grid { grid-template-columns: 1fr; }
             .document-card { padding: 14px; }
+            .pagination {
+                gap: 3px;
+            }
+
+            .pagination a, .pagination span {
+                min-width: 32px;
+                height: 32px;
+                padding: 4px 8px;
+                font-size: 12px;
+            }
+
+            .pagination-info {
+                font-size: 12px;
+            }
+
+            .items-per-page-selector {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .items-per-page-selector select {
+                width: 100%;
+            }
         }
