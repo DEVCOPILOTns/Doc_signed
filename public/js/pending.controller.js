@@ -200,49 +200,33 @@ document.addEventListener('DOMContentLoaded', function () {
 
 });
 
-// Función para inicializar comentarios expandibles
-function initializeExpandableComments() {
-    const commentSections = document.querySelectorAll('.comment-section');
+// Función para manejar click en botón de comentarios
+function handleCommentClick(event, id) {
+    event.stopPropagation(); // Evitar que se propague el evento
     
-    commentSections.forEach(section => {
-        // Verificar si hay contenido en los comentarios
-        const commentContent = section.querySelector('.comment-content');
-        const commentEmpty = section.querySelector('.comment-empty');
-        const hasContent = commentContent && commentContent.textContent.trim() !== '';
-        
-        // Si no hay contenido, no agregar el toggle
-        if (!hasContent) return;
-        
-        // Obtener el texto del comentario
-        const commentText = commentContent ? commentContent.textContent.trim() : '';
-        
-        // Crear botón toggle
-        const toggleBtn = document.createElement('button');
-        toggleBtn.classList.add('comment-toggle');
-        toggleBtn.textContent = 'Ver más';
-        toggleBtn.setAttribute('aria-expanded', 'false');
-        toggleBtn.setAttribute('aria-label', 'Expandir comentarios');
-        
-        // Agregar botón al header
-        const header = section.querySelector('.comment-header');
-        if (header) {
-            header.appendChild(toggleBtn);
-        }
-        
-        // Agregar evento click al botón para abrir modal
-        toggleBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            openCommentModal(commentText);
-        });
-        
-        // Agregar evento click a la sección también
-        section.addEventListener('click', function(e) {
-            // Solo si no hizo click en el botón
-            if (e.target !== toggleBtn) {
-                toggleBtn.click();
-            }
-        });
-    });
+    // Obtener la tarjeta del documento
+    const card = document.querySelector(`[data-id="${id}"]`);
+    if (!card) {
+        console.log('Card not found for id:', id);
+        return;
+    }
+    
+    // Obtener el texto del comentario
+    const commentText = card.querySelector('.comment-text');
+    if (commentText) {
+        const text = commentText.textContent.trim();
+        console.log('Comment text found:', text);
+        openCommentModal(text);
+    } else {
+        console.log('Comment text element not found in card');
+    }
+}
+
+// Función para inicializar comentarios (simplificada - botones en HTML)
+function initializeExpandableComments() {
+    // Esta función ahora es principalmente para compatibilidad
+    // Los comentarios se manejan directamente desde el botón en HTML
+    // Los botones "Ver comentarios" ya están configurados con onclick="handleCommentClick(...)"
 }
 
 // Función para abrir modal de comentarios

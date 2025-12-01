@@ -62,11 +62,20 @@
                         type="text"
                         id="searchInput"
                         class="search-input"
-                        placeholder="Buscar por ID, nombre o cédula..."
+                        placeholder="Buscar por ID..."
+                    />
+                    
+                    <span class="search-icon">👤</span>
+                    <input
+                        type="text"
+                        id="signerFilter"
+                        class="search-input"
+                        placeholder="Filtrar por firmante..."
                     />
                 </div>
 
                 <div class="filter-buttons">
+
                     <select id="statusFilter" class="select-filter">
                         <option value="TODOS">Todos los estados</option>
                         <option value="PENDIENTE">Pendiente</option>
@@ -74,18 +83,24 @@
                         <option value="RECHAZADO">Rechazado</option>
                     </select>
 
-                    <select id="dateFilter" class="select-filter">
-                        <option value="all">Todas las fechas</option>
-                        <option value="today">Hoy</option>
-                        <option value="week">Última semana</option>
-                        <option value="month">Último mes</option>
-                    </select>
+                    <input 
+                        type="month" 
+                        id="dateFilter" 
+                        class="select-filter"
+                        title="Elige el período"
+                    >
+
                 </div>
             </div>
 
             <!-- Results Count -->
             <div class="results-count" id="resultsCount">
                 Mostrando 0 de 0 solicitudes
+            </div>
+
+            <!-- Mensaje de sin coincidencias -->
+            <div class="no-results-message" id="noResultsMessage" style="display: none;">
+                <p>No hay coincidencias para los filtros aplicados</p>
             </div>
 
             <!-- Documents Grid: renderizado server-side similar a la vista de pendientes -->
@@ -98,11 +113,14 @@
                             const fechaRaw = doc.fecha_mostrar || doc.fecha || doc.fecha_creacion;
                             const nombre = doc.nombre_usuario || doc.usuario || doc.nombre_completo || '';
                             const cedula = doc.cedula || doc.identificacion || '';
-                            const comentario = doc.desc_comentario || doc.comentario || doc.observacion || '';
+                            // Usar motivo_rechazo si es RECHAZADO, si no, usar comentario normal
+                            const comentario = estado === 'RECHAZADO' 
+                                ? (doc.motivo_rechazo || doc.razon_rechazo || '')
+                                : (doc.desc_comentario || doc.comentario || doc.observacion || '');
                             const firmanteName = doc.nombre_firmante || doc.firmante || ('Firmante ' + (doc.id_firmante || 'N/A'));
                             const firmanteId = doc.id_firmante || null;
                         %>
-                            <div class="document-card page-item" data-id="<%= id %>">
+                            <div class="document-card page-item" data-id="<%= id %>" data-comment="<%= comentario || '' %>">
                                 <div class="document-header">
                                     <div>
                                         <div class="document-title">ID: <%= id %></div>
@@ -136,28 +154,30 @@
                                 <div class="document-user"><h4>Solicitante:</h4> <%= applicationName %></div>
 
                                 <!-- Mostrar firmante específico de esta solicitud (nombre o id) -->
-                                <div class="firmante-line">
+                                <div class="firmante-line" data-signer-name="<%= firmanteName %>">
                                     <strong>Firmante:</strong> <%= firmanteName %>
                                 </div>
-                                
-                                <div class="comment-section">
-                                    <div class="comment-header">
-                                        <div class="comment-icon">
-                                            <i class="fas fa-comment"></i>
+                                <!-- Sección de comentarios -->
+                                <% if (comentario && comentario.trim()) { %>
+                                    <div class="comment-section">
+                                        <div class="comment-header">
+                                            <div class="comment-icon">
+                                                <i class="fas fa-comment"></i>
+                                            </div>
+                                            <h4 class="comment-title">
+                                                <%= estado === 'RECHAZADO' ? 'Motivo de rechazo' : 'Comentarios' %>
+                                            </h4>
+                                            <span class="comment-text" style="display: none;"><%= comentario %></span>
+                                            <button class="btn-view-comments" onclick="handleCommentClick(event, '<%= id %>')">
+                                                <%= estado === 'RECHAZADO' ? 'Ver' : 'Ver' %>
+                                            </button>
                                         </div>
-                                        <h4 class="comment-title">Comentarios</h4>
                                     </div>
-
-                                    <% if (comentario && comentario.toString().trim()) { %>
-                                        <div class="comment-content">
-                                            <p class="comment-text"><%= comentario %></p>
-                                        </div>
-                                    <% } else { %>
-                                        <div class="comment-empty">
-                                            No hay comentarios para esta solicitud
-                                        </div>
-                                    <% } %>
-                                </div>
+                                <% } else { %>
+                                    <p class="no-comments-text">
+                                        <%= estado === 'RECHAZADO' ? 'Sin motivo registrado' : 'No hay comentarios para esta solicitud' %>
+                                    </p>
+                                <% } %>
                             </div>
                         <% }); %>
                      <% } else { %>

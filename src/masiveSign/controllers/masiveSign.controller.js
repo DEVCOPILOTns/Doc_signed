@@ -1,12 +1,14 @@
-const { saveSolicitud, saveDetalles } = require('../models/request.model');
+const { saveSolicitud, saveDetalles, getSignerUsers } = require('../models/request.model');
 const { getPendingDocuments } = require('../../pending/models/pending.model');
 
 
 async function masiveSignRender(req, res) {
   const resultPending = await getPendingDocuments(req.user.id_registro_usuarios);
+  const signerUsers = await getSignerUsers();
+  console.log('Signer Users:', signerUsers);
   return res.render('masiveSign/views/masiveSignIndex', {
     pendingDocuments: resultPending.length,
-
+    signerUsers: signerUsers
   });
 }
 

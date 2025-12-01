@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const steps = Array.from(document.querySelectorAll('.step'));
   const stepContents = Array.from(document.querySelectorAll('.step-content'));
 
+
   // ================== Utilidades ==================
   function isPdf(file) {
     return file.type === 'application/pdf' || /\.pdf$/i.test(file.name);

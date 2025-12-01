@@ -458,6 +458,17 @@ body {
 }
 
 /* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 1024px) {
+    .container {
+        margin: 1.5rem auto;
+        padding: 0 1rem;
+    }
+    
+    .content-area {
+        padding: 2rem 1.5rem;
+    }
+}
+
 @media (max-width: 768px) {
     .container {
         margin: 1rem auto;

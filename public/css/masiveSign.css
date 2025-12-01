@@ -269,6 +269,21 @@ body {
 }
 
 /* ===== RESPONSIVE PARA SELECTS ===== */
+@media (max-width: 1024px) {
+    .container {
+        padding: 1.5rem;
+    }
+    
+    .main-card {
+        max-width: 95%;
+    }
+    
+    .content-area {
+        padding: 2rem 1.5rem;
+        min-height: 400px;
+    }
+}
+
 @media (max-width: 768px) {
     .format-selects-container {
         grid-template-columns: 1fr;

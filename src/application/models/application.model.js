@@ -28,6 +28,7 @@ async function getApplicationsByUser(userId) {
                 LEFT JOIN Usuario us ON Solicitudes.id_solicitante = us.id_registro_usuarios
                 WHERE Solicitudes.id_solicitante = @userId
             `);
+            
         return result.recordset;
     } catch (error) {
         console.error('Error fetching application documents:', error);

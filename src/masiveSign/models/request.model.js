@@ -39,6 +39,20 @@ async function saveDetalles(idSolicitud, url, formato) {
     }
 }
 
+async function getSignerUsers() {
+    try {
+        const pool = await config.poolPromise;
+        const result = await pool.request()
+            .query(`
+                SELECT id_registro_usuarios, nombre_usuario, cedula
+                FROM usuario
+                WHERE id_rol = 1
+            `);
+        return result.recordset;
+    } catch (error) {
+        console.error('Error fetching signer users:', error);
+        throw error;
+    }
+}
 
-
-module.exports = { saveSolicitud, saveDetalles };
+module.exports = { saveSolicitud, saveDetalles, getSignerUsers };

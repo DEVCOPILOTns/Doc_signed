@@ -16,6 +16,7 @@ function countApplicationStatus(docs = []) {
   return counts;
 }
 
+//aqui se renderiza la vista principal de solicitudes
 async function applicationRender(req, res) {
   try {
     const userId = req.user && req.user.id_registro_usuarios;
@@ -28,24 +29,31 @@ async function applicationRender(req, res) {
         const estado = (doc.estado_solicitud || '').toString().toUpperCase();
         
         let fechaAMostrar = null;
+        let comentario = null
         let etiquetaFecha = 'Fecha de solicitud: ';
         
         if (estado === 'FIRMADO') {
+          comentario = doc.desc_comentario;
           fechaAMostrar = doc.fecha_firma;
           etiquetaFecha = 'Fecha de firma: ';
         } else if (estado === 'RECHAZADO') {
+          comentario = doc.motivo_rechazo;
           fechaAMostrar = doc.fecha_rechazo;
           etiquetaFecha = 'Fecha de rechazo: ';
         } else {
+          comentario = doc.desc_comentario;
           fechaAMostrar = doc.fecha_solicitud;
           etiquetaFecha = 'Fecha de solicitud: ';
         }
+
+
         
         return {
           ...doc,
           fechaAMostrar: fechaAMostrar,
           etiquetaFecha: etiquetaFecha,
-          estado_solicitud: estado
+          estado_solicitud: estado,
+          comentario: comentario
         };
       });
     } else {
@@ -79,7 +87,6 @@ async function applicationRender(req, res) {
 }
 
 
-
 // aqui en esta funcion se obtienen los datos en formato JSON
 async function applicationData(req, res) {
   try {
@@ -96,7 +103,7 @@ async function applicationData(req, res) {
 async function applicationDetails(req, res) {
   try {
     const id = req.params.id;
-    console.log('applicationDetails: id=', id); // Log para depurar
+    
     if (!id) return res.status(400).json({ error: 'Falta id de solicitud' });
 
     const details = await getApplicationDocuments(id);

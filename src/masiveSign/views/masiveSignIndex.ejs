@@ -60,12 +60,15 @@
                     </div>
                     <div class="Format-list">
                         <h4>Selecciona el representante Legal</h4>
-                        <!-- IMPORTANTE: dispara la carga de coordenadas -->
                         <select id="representanteLegalSelect" name="representanteLegal" style="padding:8px; border-radius:6px; width:100%;">
-                            <option value="" disabled selected>-- Selecciona un representante --</option>
-                            <option value="4">Juan David Jaramillo</option>
-                            <option value="3">Alejandro Jimenez</option>
-                            <option value="2">Alejandro Moreno Jimenez</option>
+                            <option value="">-- Selecciona un firmante --</option>
+                            <% if (signerUsers && signerUsers.length > 0) { %>
+                                <% signerUsers.forEach(function(signer) { %>
+                                    <option value="<%= signer.id_registro_usuarios %>"><%= signer.nombre_usuario %></option>
+                                <% }); %>
+                            <% } else { %>
+                                <option value="" disabled>No hay firmantes disponibles</option>
+                            <% } %>
                         </select>
                     </div>
                     <br>

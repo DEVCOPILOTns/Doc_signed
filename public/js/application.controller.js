@@ -213,6 +213,30 @@ document.addEventListener('DOMContentLoaded', function () {
     initializeModal();
 });
 
+// Función para manejar click en botón de comentarios
+function handleCommentClick(event, id) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // Obtener la tarjeta del documento
+    const card = document.querySelector(`.document-card[data-id="${id}"]`);
+    if (!card) {
+        console.error('Tarjeta no encontrada para ID:', id);
+        return;
+    }
+    
+    // Obtener el texto del comentario desde el span .comment-text
+    const commentText = card.querySelector('.comment-text');
+    if (commentText) {
+        const text = commentText.textContent.trim();
+        console.log('Comment text found:', text);
+        openCommentModal(text);
+    } else {
+        console.log('Comment text element not found in card');
+        openCommentModal('No hay comentarios disponibles');
+    }
+}
+
 // Función para inicializar comentarios expandibles
 function initializeExpandableComments() {
     const commentSections = document.querySelectorAll('.comment-section');
@@ -411,29 +435,38 @@ document.addEventListener('DOMContentLoaded', function() {
         attachFilterListeners();
     }, 100);
 });
-
+ //aqui adjuntamos los listeners a los filtros que son cuatro: busqueda, estado, fecha y firmante
 function attachFilterListeners() {
     const searchInput = document.getElementById('searchInput');
     const statusFilter = document.getElementById('statusFilter');
     const dateFilter = document.getElementById('dateFilter');
-    
+    const signerFilter = document.getElementById('signerFilter');
+    //aqui adjuntamos los eventos
+    //este es para la busqueda lo que hace es que al escribir en el input se aplica el filtro
     if (searchInput) {
         searchInput.addEventListener('input', function() {
             console.log('Evento input en búsqueda');
             applyFilters();
         });
     }
-    
+    //aqui es para el filtro de estado
     if (statusFilter) {
         statusFilter.addEventListener('change', function() {
             console.log('Evento change en estado');
             applyFilters();
         });
     }
-    
+    //aqui es para el filtro de fecha
     if (dateFilter) {
         dateFilter.addEventListener('change', function() {
             console.log('Evento change en fecha');
+            applyFilters();
+        });
+    }
+    //aqui es para el filtro de firmante
+    if (signerFilter) {
+        signerFilter.addEventListener('input', function() {
+            console.log('Evento input en firmante');
             applyFilters();
         });
     }
@@ -470,10 +503,12 @@ function initializePagination() {
     const searchInput = document.getElementById('searchInput');
     const statusFilter = document.getElementById('statusFilter');
     const dateFilter = document.getElementById('dateFilter');
+    const signerFilter = document.getElementById('signerFilter');
     
     if (searchInput) searchInput.value = '';
     if (statusFilter) statusFilter.value = 'TODOS';
-    if (dateFilter) dateFilter.value = 'all';
+    if (dateFilter) dateFilter.value = '';
+    if (signerFilter) signerFilter.value = '';
     
     // Mostrar la primera página
     updateResultsCount();
@@ -481,34 +516,41 @@ function initializePagination() {
     generatePaginationControls();
 }
 
+//esta funcion es la que aplica los filtros
 function applyFilters() {
+
+    //aqui obtenemos los valores de los filtros
     const searchInput = document.getElementById('searchInput');
     const statusFilter = document.getElementById('statusFilter');
     const dateFilter = document.getElementById('dateFilter');
+    const signerFilter = document.getElementById('signerFilter');
+
     
+    //aqui obtenemos los valores
     const searchTerm = (searchInput?.value || '').toLowerCase().trim();
     const statusValue = statusFilter?.value || 'TODOS';
-    const dateValue = dateFilter?.value || 'all';
+    const dateValue = dateFilter?.value || '';
+    const signerTerm = (signerFilter?.value || '').toLowerCase().trim();
     
+    //logging para depurar
     console.log('=== APLICAR FILTROS ===');
     console.log('Búsqueda:', searchTerm);
     console.log('Estado:', statusValue);
     console.log('Fecha:', dateValue);
+    console.log('Firmante:', signerTerm);
     console.log('Total items antes de filtro:', allItems.length);
     
     // Filtrar items basado en criterios
     filteredItems = allItems.filter(item => {
+
         // Filtro de búsqueda
         if (searchTerm) {
             const id = item.getAttribute('data-id') || '';
             const titleEl = item.querySelector('.document-title');
             const titleText = titleEl ? titleEl.textContent.toLowerCase() : '';
-            const userEl = item.querySelector('.document-user');
-            const userText = userEl ? userEl.textContent.toLowerCase() : '';
             
             const matches = id.toLowerCase().includes(searchTerm) || 
-                           titleText.includes(searchTerm) || 
-                           userText.includes(searchTerm);
+                           titleText.includes(searchTerm);
             if (!matches) {
                 console.log(`Item ${id} no coincide con búsqueda`);
                 return false;
@@ -533,38 +575,37 @@ function applyFilters() {
             }
         }
         
-        // Filtro de fecha
-        if (dateValue !== 'all') {
+        // Filtro de fecha por mes/año
+        if (dateValue && dateValue.trim() !== '') {
             const dateEl = item.querySelector('.document-date');
             if (dateEl) {
                 const dateText = dateEl.textContent;
                 // Extraer solo la parte de la fecha (ignorar etiquetas)
                 const dateMatch = dateText.match(/(\d{2}\/\d{2}\/\d{4})/);
                 if (dateMatch) {
-                    const itemDate = new Date(dateMatch[1].split('/').reverse().join('-'));
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
+                    // Convertir formato DD/MM/YYYY a YYYY-MM
+                    const [day, month, year] = dateMatch[1].split('/');
+                    const itemYearMonth = `${year}-${month}`;
                     
-                    let isInRange = false;
-                    
-                    if (dateValue === 'today') {
-                        itemDate.setHours(0, 0, 0, 0);
-                        isInRange = itemDate.getTime() === today.getTime();
-                    } else if (dateValue === 'week') {
-                        const weekAgo = new Date(today);
-                        weekAgo.setDate(weekAgo.getDate() - 7);
-                        isInRange = itemDate >= weekAgo && itemDate <= today;
-                    } else if (dateValue === 'month') {
-                        const monthAgo = new Date(today);
-                        monthAgo.setDate(monthAgo.getDate() - 30);
-                        isInRange = itemDate >= monthAgo && itemDate <= today;
-                    }
-                    
-                    if (!isInRange) {
-                        console.log(`Item fecha "${dateText}" no está en rango`);
+                    // dateValue viene en formato YYYY-MM del input type="month"
+                    if (itemYearMonth !== dateValue) {
+                        console.log(`Item fecha "${dateText}" no coincide con filtro "${dateValue}"`);
                         return false;
                     }
                 }
+            }
+        }
+        
+        // Filtro de firmante
+        if (signerTerm) {
+            const signerEl = item.querySelector('.firmante-line');
+            const signerText = signerEl ? signerEl.textContent.toLowerCase() : '';
+            
+            const matches = signerText.includes(signerTerm);
+            if (!matches) {
+                const id = item.getAttribute('data-id') || '';
+                console.log(`Item ${id} no coincide con búsqueda de firmante`);
+                return false;
             }
         }
         
@@ -581,6 +622,27 @@ function applyFilters() {
 }
 
 function showPage(pageNumber) {
+    // Primero, ocultar TODOS los items del DOM actual
+    const allCurrentItems = Array.from(document.querySelectorAll('.documents-grid .page-item'));
+    console.log('Items en el DOM:', allCurrentItems.length);
+    
+    allCurrentItems.forEach((item) => {
+        item.style.display = 'none';
+    });
+    
+    // Mostrar/ocultar mensaje de sin coincidencias
+    const noResultsMessage = document.getElementById('noResultsMessage');
+    if (filteredItems.length === 0) {
+        if (noResultsMessage) {
+            noResultsMessage.style.display = 'block';
+        }
+        return; // Retornar temprano si no hay resultados
+    } else {
+        if (noResultsMessage) {
+            noResultsMessage.style.display = 'none';
+        }
+    }
+    
     if (pageNumber < 1 || pageNumber > Math.ceil(filteredItems.length / itemsPerPage)) {
         console.warn('Número de página inválido:', pageNumber);
         return;
@@ -594,14 +656,6 @@ function showPage(pageNumber) {
     
     console.log(`=== MOSTRAR PÁGINA ${pageNumber} ===`);
     console.log(`Mostrando items ${startIndex} a ${endIndex - 1} de ${filteredItems.length}`);
-    
-    // Primero, ocultar TODOS los items del DOM actual
-    const allCurrentItems = Array.from(document.querySelectorAll('.documents-grid .page-item'));
-    console.log('Items en el DOM:', allCurrentItems.length);
-    
-    allCurrentItems.forEach((item) => {
-        item.style.display = 'none';
-    });
     
     // Obtener los items a mostrar en esta página
     const itemsToShow = filteredItems.slice(startIndex, endIndex);
