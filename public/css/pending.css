@@ -309,7 +309,7 @@
         .document-user,
         .document-info {
             color: var(--text-700);
-            font-size: 0.9375rem;
+            font-size: 0.73rem;
             margin-bottom: var(--space-2);
             overflow: hidden;
             text-overflow: ellipsis;

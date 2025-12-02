@@ -21,8 +21,8 @@ async function getApplicationsByUser(userId) {
             .query(`
                 SELECT 
                     Solicitudes.*,
-                    uf.nombre_usuario AS nombre_firmante,
-                    us.nombre_usuario AS nombre_solicitante
+                    uf.nombre_completo AS nombre_firmante,
+                    us.nombre_completo AS nombre_solicitante
                 FROM Solicitudes
                 LEFT JOIN Usuario uf ON Solicitudes.id_firmante = uf.id_registro_usuarios
                 LEFT JOIN Usuario us ON Solicitudes.id_solicitante = us.id_registro_usuarios

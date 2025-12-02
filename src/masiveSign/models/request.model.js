@@ -44,7 +44,7 @@ async function getSignerUsers() {
         const pool = await config.poolPromise;
         const result = await pool.request()
             .query(`
-                SELECT id_registro_usuarios, nombre_usuario, cedula
+                SELECT id_registro_usuarios, nombre_usuario, cedula, nombre_completo
                 FROM usuario
                 WHERE id_rol = 1
             `);

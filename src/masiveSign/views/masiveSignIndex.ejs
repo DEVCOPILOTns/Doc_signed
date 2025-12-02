@@ -64,7 +64,7 @@
                             <option value="">-- Selecciona un firmante --</option>
                             <% if (signerUsers && signerUsers.length > 0) { %>
                                 <% signerUsers.forEach(function(signer) { %>
-                                    <option value="<%= signer.id_registro_usuarios %>"><%= signer.nombre_usuario %></option>
+                                    <option value="<%= signer.id_registro_usuarios %>"><%= signer.nombre_completo %></option>
                                 <% }); %>
                             <% } else { %>
                                 <option value="" disabled>No hay firmantes disponibles</option>
