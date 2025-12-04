@@ -20,6 +20,7 @@
           --danger-600: #dc2626;
           --danger-700: #b91c1c;
           --warning-500: #f59e0b;   /* amber */
+          --info-400: #f3f4f6;      /* gray */
           --info-500: #e0e0e0;      /* gray */
           --info-600: #b6b6c0;      /* gray */
           
@@ -40,6 +41,7 @@
           --radius-md: 12px;
           --radius-lg: 16px;
           --radius-xl: 24px;
+          --radius-complete: 9999px;
 
           --space-1: .25rem;
           --space-2: .5rem;

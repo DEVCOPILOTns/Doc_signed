@@ -13,7 +13,7 @@ const applicationRouter = require('./src/application/routes/application.route.js
 const { authenticateToken } = require('./src/app/middleware/auth.middleware.js');
 const userProfileRouter = require('./src/userProfile/routes/userProfile.route.js');
 const cookieParser = require("cookie-parser");
-
+const creteFormatRouter = require('./src/createFormat/routes/createFormat.route.js');
 
 
 app.use(cookieParser())
@@ -39,6 +39,7 @@ app.use('/api/sign', authenticateToken, singRouter);
 app.use('/api/pending', authenticateToken, pendingRouter);
 app.use('/api/userProfile', authenticateToken, userProfileRouter);
 app.use('/api/application', authenticateToken, applicationRouter);
+app.use('/api/createFormat', authenticateToken, creteFormatRouter);
 
 // Modificar el middleware de archivos para un mejor manejo
 const serveFileMiddleware = (req, res, next) => {

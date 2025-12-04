@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NewStetic - DocSigned</title>
+     <link rel="stylesheet" href="/css/Global.css">
+    <link rel="stylesheet" href="/css/createFormat.css">
+    <link rel="stylesheet" href="/css/footer.css">
+    <link rel="stylesheet" href="/css/nav.css">
+    <link rel="icon" type="image/png" href="/images/logo_docsigned.png">
+</head>
+<body>
+    <%- include('../../components/nav.ejs') %>
+
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">
+                <span>📝</span>
+                Crear Nuevo Formato
+            </h1>
+            <p class="page-subtitle">
+                Configura un nuevo formato de firma con las etapas y firmantes necesarios
+            </p>
+        </div>
+
+        <!-- Alert Info -->
+        <div class="alert alert-info">
+            <span style="font-size: 1.5rem;">ℹ️</span>
+            <div>
+                <strong>Información:</strong> Define el orden de las firmas y los firmantes que participarán en el proceso de aprobación del documento.
+            </div>
+        </div>
+
+        <!-- Form -->
+        <form id="formatoForm" class="form-card">
+            <!-- Información Básica -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-icon">📋</div>
+                    <h2 class="section-title">Información Básica</h2>
+                </div>
+
+                <div class="form-group">
+                    <label for="nombreFormato" class="form-label">
+                        Nombre del Formato
+                        <span class="required">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="nombreFormato" 
+                        name="nombreFormato" 
+                        class="form-input"
+                        placeholder="Ej: Formato de Solicitud de Vacaciones"
+                        required
+                    />
+                    <span class="form-help">Nombre descriptivo que identifique este formato</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="descripcion" class="form-label">
+                        Descripción
+                    </label>
+                    <textarea 
+                        id="descripcion" 
+                        name="descripcion" 
+                        class="form-textarea"
+                        placeholder="Describe el propósito y uso de este formato..."
+                    ></textarea>
+                    <span class="form-help">Información adicional sobre el formato (opcional)</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="estado" class="form-label">
+                        Estado
+                        <span class="required">*</span>
+                    </label>
+                    <select id="estado" name="estado" class="form-select" required>
+                        <option value="activo" selected>Activo</option>
+                        <option value="inactivo">Inactivo</option>
+                    </select>
+                    <span class="form-help">Los formatos activos estarán disponibles para su uso</span>
+                </div>
+            </div>
+
+            <!-- Etapas de Firma -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-icon">✍️</div>
+                    <h2 class="section-title">Etapas de Firma</h2>
+                </div>
+
+                <div id="etapasContainer" class="etapas-container">
+                    <!-- Las etapas se agregarán aquí dinámicamente -->
+                </div>
+
+                <button type="button" class="btn btn-add" id="btnAddEtapa">
+                    <span style="font-size: 1.5rem;">+</span>
+                    Agregar Etapa de Firma
+                </button>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="window.history.back()">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-success">
+                    <span>💾</span>
+                    Guardar Formato
+                </button>
+            </div>
+        </form>
+    </div>
+    <script src="/js/createFormat.controller.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <%- include('../../components/footer.ejs') %>
+</body>
+</html>

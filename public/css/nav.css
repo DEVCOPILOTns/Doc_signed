@@ -196,6 +196,29 @@ body {
   box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
   animation: pulse 2s infinite;
 }
+.create-format-btn{
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--primary-500);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all var(--transition);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.create-format-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  background: var(--secondary-500);
+}
 
 .pending-badge.large-number {
   min-width: 24px;
