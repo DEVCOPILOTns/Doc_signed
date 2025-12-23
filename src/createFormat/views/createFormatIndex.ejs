@@ -36,7 +36,7 @@
         </div>
 
         <!-- Form -->
-        <form id="formatoForm" class="form-card">
+        <form id="formatoForm" class="form-card" >
             <!-- Información Básica -->
             <div class="form-section">
                 <div class="section-header">
@@ -115,8 +115,12 @@
             </div>
         </form>
     </div>
-    <script src="/js/createFormat.controller.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Pasar los datos de firmantes desde EJS al JavaScript
+        const signerUsersData = <%-  JSON.stringify(signerUsers || []) %>;
+    </script>
+    <script src="/js/createFormat.controller.js"></script>
 
     <%- include('../../components/footer.ejs') %>
 </body>

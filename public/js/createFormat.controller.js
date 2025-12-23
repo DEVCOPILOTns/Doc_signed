@@ -1,4 +1,21 @@
  let etapaCounter = 0;
+        let signerUsers = signerUsersData || [];
+
+        console.log('Firmantes disponibles:', signerUsers);
+
+        // Crear opciones del select de firmantes
+        function generateSignerOptions() {
+            if (!signerUsers || signerUsers.length === 0) {
+                return '<option value="">No hay firmantes disponibles</option>';
+            }
+            let options = '<option value="">Selecciona un firmante</option>';
+            signerUsers.forEach(signer => {
+                options += `<option value="${signer.id_registro_usuarios}">${signer.nombre_completo}</option>`;
+            });
+            return options;
+        }
+
+
 
         // Agregar etapa de firma
         document.getElementById('btnAddEtapa').addEventListener('click', function() {
@@ -12,16 +29,16 @@
                     <div class="etapa-fields">
                         <div class="form-group">
                             <label class="form-label">
-                                ID del Firmante
+                                Selecciona el Firmante
                                 <span class="required">*</span>
                             </label>
-                            <input 
-                                type="text" 
+                            <select 
                                 name="idFirmante[]" 
-                                class="form-input"
-                                placeholder="Ej: colaborador, jefe, gerente"
+                                class="form-select"
                                 required
-                            />
+                            >
+                                ${generateSignerOptions()}
+                            </select>
                         </div>
                         <div class="form-group">
                             <label class="form-label">
@@ -52,8 +69,10 @@
                 </div>
             `;
             document.getElementById('etapasContainer').insertAdjacentHTML('beforeend', etapaHTML);
-            updateOrdenEtapas();
+            updateOrdenEtapas(); //aqui actualizo la numeracion de etapas
         });
+
+
 
         // Remover etapa
         function removeEtapa(button) {
@@ -73,57 +92,81 @@
         }
 
         // Submit del formulario
-        document.getElementById('formatoForm').addEventListener('submit', function(e) {
+    document.getElementById('formatoForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const etapas = document.querySelectorAll('.etapa-card');
             
             if (etapas.length === 0) {
-                alert('Debes agregar al menos una etapa de firma');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Sin etapas',
+                    text: 'Debes agregar al menos una etapa de firma',
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'Entendido'
+                });
                 return;
             }
 
             const formData = {
-                nombreFormato: document.getElementById('nombreFormato').value,
-                descripcion: document.getElementById('descripcion').value,
+                nombreFormato: document.getElementById('nombreFormato').value.trim(),
+                descripcion: document.getElementById('descripcion').value.trim(),
                 estado: document.getElementById('estado').value,
                 cantidadFirmantes: etapas.length,
                 etapas: []
             };
 
             etapas.forEach((etapa, index) => {
-                const idFirmante = etapa.querySelector('input[name="idFirmante[]"]').value;
-                const palabraClave = etapa.querySelector('input[name="palabraClave[]"]').value;
-                const posicionFirma = etapa.querySelector('input[name="posicionFirma[]"]').value;
+                const idFirmante = etapa.querySelector('select[name="idFirmante[]"]').value;
+                const palabraClave = etapa.querySelector('input[name="palabraClave[]"]').value.trim();
+                const posicionFirma = etapa.querySelector('input[name="posicionFirma[]"]').value.trim();
 
                 formData.etapas.push({
                     orden: index + 1,
-                    idFirmante: idFirmante,
-                    palabraClave: palabraClave,
+                    idFirmante,
+                    palabraClave,
                     posicionFirma: posicionFirma || null
                 });
             });
 
-            console.log('Datos del formato:', formData);
-            
-            // Aquí puedes enviar los datos al servidor
-            // fetch('/api/formatos', {
-            //     method: 'POST',
-            //     headers: { 'Content-Type': 'application/json' },
-            //     body: JSON.stringify(formData)
-            // })
-            // .then(response => response.json())
-            // .then(data => {
-            //     alert('Formato creado exitosamente');
-            //     window.location.href = '/formatos';
-            // })
-            // .catch(error => {
-            //     alert('Error al crear el formato');
-            //     console.error(error);
-            // });
+            console.log('Enviando formato con etapas:', formData);
 
-            alert('Formato guardado exitosamente (simulado)');
+            fetch('/api/createFormat/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al crear el formato');
+                }
+                return response.text();
+            })
+            .then(data => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Éxito',
+                    text: 'Formato creado exitosamente',
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'Continuar'
+                }).then(() => {
+                    window.location.href = '/api/index';
+                });
+            })
+            .catch(error => {
+                console.error('Error al enviar formato:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error al crear el formato: ' + error.message,
+                    confirmButtonColor: '#d33',
+                    confirmButtonText: 'Cerrar'
+                });
+            });
         });
+
 
         // Agregar una etapa por defecto al cargar
         document.getElementById('btnAddEtapa').click();
