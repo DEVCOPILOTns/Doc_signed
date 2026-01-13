@@ -1,14 +1,15 @@
-const { saveSolicitud, saveDetalles, getSignerUsers } = require('../models/request.model');
+const { saveSolicitud, saveDetalles, getSignerUsers, getFormats } = require('../models/request.model');
 const { getPendingDocuments } = require('../../pending/models/pending.model');
 
 
 async function masiveSignRender(req, res) {
   const resultPending = await getPendingDocuments(req.user.id_registro_usuarios);
+  const formats = await getFormats();
   const signerUsers = await getSignerUsers();
-  console.log('Signer Users:', signerUsers);
   return res.render('masiveSign/views/masiveSignIndex', {
     pendingDocuments: resultPending.length,
-    signerUsers: signerUsers
+    signerUsers: signerUsers,
+    formats: formats,
   });
 }
 
@@ -35,7 +36,7 @@ async function uploadFiles(req, res) {
       };
     });
     const tipo_solicitud = 'masiva'
-    const idSolicitud = await saveSolicitud(req.user.id_registro_usuarios, req.body.representanteLegal, tipo_solicitud, req.body.comments || '');
+    const idSolicitud = await saveSolicitud(req.user.id_registro_usuarios, req.body.formato, tipo_solicitud, req.body.comments || '');
 
     for (let index = 0; index < processedFiles.length; index++) {
       await saveDetalles(idSolicitud, processedFiles[index].url, req.body.formato);

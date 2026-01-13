@@ -24,7 +24,7 @@ async function getApplicationsByUser(userId) {
                     uf.nombre_completo AS nombre_firmante,
                     us.nombre_completo AS nombre_solicitante
                 FROM Solicitudes
-                LEFT JOIN Usuario uf ON Solicitudes.id_firmante = uf.id_registro_usuarios
+                LEFT JOIN Usuario uf ON Solicitudes.id_formato  = uf.id_registro_usuarios
                 LEFT JOIN Usuario us ON Solicitudes.id_solicitante = us.id_registro_usuarios
                 WHERE Solicitudes.id_solicitante = @userId
             `);

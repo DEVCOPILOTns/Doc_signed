@@ -59,15 +59,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         return false;
       }
-      if (!isValidFileForFormat(f, formatSelect.value)) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'Formato incorrecto',
-          text: `El archivo "${f.name}" no corresponde al formato seleccionado (${formatSelect.value}).`,
-          confirmButtonColor: '#f0ad4e'
-        });
-        return false;
-      }
       return true;
     });
 
@@ -166,12 +157,6 @@ document.addEventListener('DOMContentLoaded', () => {
     selectedFormat = formatSelect.value || null;
   });
 
-  function isValidFileForFormat(file, selectedFormat) {
-    if (!selectedFormat) return false;
-    const fileName = file.name.toUpperCase();
-    return fileName.includes(selectedFormat);
-  }
-
   // ================== Navegación ==================
   function updateProgressLine() {
     if (!progressLine) return;
@@ -205,33 +190,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         return;
       }
-      if (!formatSelect || !formatSelect.value) {
-        Swal.fire({
-          icon: 'info',
-          title: 'Formato requerido',
-          text: 'Por favor, seleccione un formato antes de continuar.',
-          confirmButtonColor: '#3085d6'
-        });
-        return;
-      }
-      const representanteLegalSelect = document.getElementById('representanteLegalSelect');
-      if (!representanteLegalSelect || !representanteLegalSelect.value) {
-        Swal.fire({
-          icon: 'info',
-          title: 'Campo obligatorio',
-          text: 'Por favor, seleccione un representante legal antes de continuar.',
-          confirmButtonColor: '#3085d6'
-        });
-        return;
-      }
     }
 
     if (currentStep === totalSteps) {
       const formData = new FormData();
       formData.append('formato', formatSelect.value);
-
-      const representanteLegalSelect = document.getElementById('representanteLegalSelect');
-      formData.append('representanteLegal', representanteLegalSelect.value);
 
       const commentsInput = document.getElementById('comments');
       formData.append('comments', commentsInput ? commentsInput.value : '');

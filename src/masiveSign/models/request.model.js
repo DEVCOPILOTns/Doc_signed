@@ -3,17 +3,17 @@ const config = require('../../../db.js');
 
 console.log('informacion de req.user:');
 
-async function saveSolicitud(id_solicitante, id_firmante, tipo_solicitud, comentarios) {
+async function saveSolicitud(id_solicitante, id_formato, tipo_solicitud, comentarios) {
     try {
         const pool = await config.poolPromise;//Aqui obtengo el pool de conexiones
         const result = await pool.request()//aqui creo una nueva solicitud
             .input('id_solicitante', sql.Int, id_solicitante)
-            .input('id_firmante', sql.Int, id_firmante)
+            .input('id_formato', sql.Int, id_formato)
             .input('tipo_solicitud', sql.VarChar, tipo_solicitud)
             //.input('fechaSolicitud', sql.DateTime, new Date())
             .input('comentarios', sql.VarChar, comentarios)
-            .query('INSERT INTO Solicitudes (id_solicitante, id_firmante, tipo_solicitud, fecha_solicitud, desc_comentario) VALUES (@id_solicitante, @id_firmante, @tipo_solicitud, GETDATE(), @comentarios); SELECT SCOPE_IDENTITY() AS id;');
-
+            .input('etapa_actual', sql.Int, 1)
+            .query('INSERT INTO Solicitudes (id_solicitante, id_formato, tipo_solicitud, fecha_solicitud, desc_comentario, etapa_actual) VALUES (@id_solicitante, @id_formato, @tipo_solicitud, GETDATE(), @comentarios, @etapa_actual); SELECT SCOPE_IDENTITY() AS id;');
         return result.recordset[0].id;
         
 
@@ -55,4 +55,19 @@ async function getSignerUsers() {
     }
 }
 
-module.exports = { saveSolicitud, saveDetalles, getSignerUsers };
+async function getFormats() {
+    try {
+        const pool = await config.poolPromise;
+        const result = await pool.request()
+            .query(`
+                SELECT *
+                FROM formatos
+            `);
+        return result.recordset;
+    } catch (error) {
+        console.error('Error fetching formats:', error);
+        throw error;
+    }
+}
+
+module.exports = { saveSolicitud, saveDetalles, getSignerUsers, getFormats };

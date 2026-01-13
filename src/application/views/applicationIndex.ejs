@@ -117,8 +117,8 @@
                             const comentario = estado === 'RECHAZADO' 
                                 ? (doc.motivo_rechazo || doc.razon_rechazo || '')
                                 : (doc.desc_comentario || doc.comentario || doc.observacion || '');
-                            const firmanteName = doc.nombre_firmante || doc.firmante || ('Firmante ' + (doc.id_firmante || 'N/A'));
-                            const firmanteId = doc.id_firmante || null;
+                            const firmanteName = doc.nombre_firmante || doc.firmante || ('Firmante ' + (doc.id_formato  || 'N/A'));
+                            const firmanteId = doc.id_formato  || null;
                         %>
                             <div class="document-card page-item" data-id="<%= id %>" data-comment="<%= comentario || '' %>">
                                 <div class="document-header">

@@ -67,7 +67,7 @@ async function applicationRender(req, res) {
       applicationDocs,
       pendingDocuments: pendingData?.pendientes || 0,
       signedDocuments: pendingData?.firmados || 0,
-      signedUser: pendingData.id_firmante || null,
+      signedUser: pendingData.id_formato  || null,
       signedName: applicationDocs.length > 0 ? applicationDocs[0].nombre_firmante : (pendingData.nombre_firmante || 'N/A'),
       applicationName: applicationDocs.length > 0 ? applicationDocs[0].nombre_solicitante : (pendingData.nombre_solicitante || 'N/A'),
       countSigned: statusCounts.FIRMADO,

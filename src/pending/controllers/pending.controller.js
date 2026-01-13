@@ -192,7 +192,7 @@ async function signAllDocuments(req, res) {
 
                     // Subir documento firmado
                     const fileName = `${doc.nombre_original}-firmado.pdf`;
-                    const { publicUrl } = await uploadFileToStorage(signedPdfBytes, fileName);
+                    const { publicUrl } = await uploadFileToStorage(signedPdfBytes, fileName, req);
 
                     // Registrar documento firmado
                     await createDocumentSigned(
@@ -221,7 +221,7 @@ async function signAllDocuments(req, res) {
 
             // Actualizar estado si todo fue exitoso
             if (resultados.every(r => r.firmado)) {
-                await changeStateApplication(userInfo.selectedDocumentId, 'FIRMADO' );
+                await changeStateApplication(userInfo.selectedDocumentId, 'FIRMADO', null);
             }
 
             return res.status(200).json({

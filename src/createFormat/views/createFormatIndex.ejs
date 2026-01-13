@@ -12,7 +12,7 @@
 </head>
 <body>
     <%- include('../../components/nav.ejs') %>
-
+    
 
     <!-- Main Container -->
     <div class="container">
@@ -20,22 +20,100 @@
         <div class="page-header">
             <h1 class="page-title">
                 <span>📝</span>
-                Crear Nuevo Formato
+                Formatos
             </h1>
             <p class="page-subtitle">
                 Configura un nuevo formato de firma con las etapas y firmantes necesarios
             </p>
+            <br>
+                        <!-- CreateFormat -->
+            <a href="#" class="create-format-btn" id="createFormatBtn" onclick="openFormatModal(event)">
+                <!-- Icono de crear formato -->
+                <span class="mdi mdi-file-document-edit"></span>
+                <span>+Crear Formato</span>
+            </a>
         </div>
+    </div>
 
-        <!-- Alert Info -->
-        <div class="alert alert-info">
-            <span style="font-size: 1.5rem;">ℹ️</span>
-            <div>
-                <strong>Información:</strong> Define el orden de las firmas y los firmantes que participarán en el proceso de aprobación del documento.
+
+        <!-- Contenedor consulta de formatos -->
+    <div class="container">
+        <div class="formats-list">
+            <div class="formats-header">
+                <h2 class="formats-title">
+                    <span class="formats-icon">📋</span>
+                    Formatos Existentes
+                </h2>
+                <p class="formats-subtitle">Listado de todos los formatos de firma disponibles</p>
             </div>
-        </div>
+            
+            <% if (formats && formats.length > 0) { %>
+                <div class="format-grid">
+                    <% formats.forEach(function(format) { %>
+                        <div class="format-card">
+                            <div class="format-card-header">
+                                <span class="format-id"><%= format.id_registro_formato %></span>
+                                <h3 class="format-name">
+                                    <span class="format-icon-small">📄</span>
+                                    <%= format.nombre_formato %>
+                                </h3>
+                                <span class="format-status <%= format.estado === 'activo' ? 'status-active' : 'status-inactive' %>">
+                                    <%= format.estado === 'activo' ? '● Activo' : '● Inactivo' %>
+                                </span>
+                            </div>
 
-        <!-- Form -->
+                            <% if (format.descripcion) { %>
+                                <p class="format-description">
+                                    <%= format.descripcion %>
+                                </p>
+                            <% } %>
+
+                            <div class="format-meta">
+                                <div class="meta-item">
+                                    <span class="meta-label">📅 Fecha de Creación</span>
+                                    <span class="meta-value">
+                                        <%= format.fecha_creacion ? new Date(format.fecha_creacion).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: '2-digit' }) : 'N/A' %>
+                                    </span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-label">✍️ Firmantes</span>
+                                    <span class="meta-value format-signer-count">
+                                        <%= format.cantidad_firmantes || 0 %>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="format-actions">
+                                <button class="btn-action btn-edit" title="Editar formato" onclick="editFormat(<%= format.id_registro_formato || '' %>)">
+                                    <span>✏️</span>
+                                    Editar
+                                </button>
+                                <button class="btn-action btn-delete" title="Eliminar formato">
+                                    <span>🗑️</span>
+                                    Eliminar
+                                </button>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            <% } else { %>
+                <div class="empty-state">
+                    <div class="empty-icon">📋</div>
+                    <h3>No hay formatos creados</h3>
+                    <p>Comienza creando tu primer formato de firma haciendo clic en el botón <strong>+Crear Formato</strong></p>
+                </div>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- Modal de Creación de Formato -->
+    <div id="formatModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Crear Nuevo Formato</h2>
+                <button type="button" class="modal-close" onclick="closeFormatModal()">×</button>
+            </div>
+            <div class="modal-body">
         <form id="formatoForm" class="form-card" >
             <!-- Información Básica -->
             <div class="form-section">
@@ -105,7 +183,7 @@
 
             <!-- Form Actions -->
             <div class="form-actions">
-                <button type="button" class="btn btn-secondary" onclick="window.history.back()">
+                <button type="button" class="btn btn-secondary" onclick="closeFormatModal()">
                     Cancelar
                 </button>
                 <button type="submit" class="btn btn-success">
@@ -114,7 +192,13 @@
                 </button>
             </div>
         </form>
+            </div>
+        </div>
     </div>
+
+
+
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         // Pasar los datos de firmantes desde EJS al JavaScript

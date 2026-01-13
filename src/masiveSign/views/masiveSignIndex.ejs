@@ -54,24 +54,17 @@
                         <!-- IMPORTANTE: dispara la carga de coordenadas -->
                         <select id="formatSelect" name="formato" style="padding:8px; border-radius:6px; width:100%;">
                             <option value="" disabled selected>-- Selecciona un formato --</option>
-                            <option value="GCLPFO-004">GCLPFO-004</option>
-                            <option value="GCLPFO-002">GCLPFO-002</option>
-                        </select>
-                    </div>
-                    <div class="Format-list">
-                        <h4>Selecciona el representante Legal</h4>
-                        <select id="representanteLegalSelect" name="representanteLegal" style="padding:8px; border-radius:6px; width:100%;">
-                            <option value="">-- Selecciona un firmante --</option>
-                            <% if (signerUsers && signerUsers.length > 0) { %>
-                                <% signerUsers.forEach(function(signer) { %>
-                                    <option value="<%= signer.id_registro_usuarios %>"><%= signer.nombre_completo %></option>
+                            <% if (formats && formats.length > 0) { %>
+                                <% formats.forEach(function(format) { %>
+                                    <option value="<%= format.id_registro_formato %>"><%= format.nombre_formato %></option>
                                 <% }); %>
                             <% } else { %>
-                                <option value="" disabled>No hay firmantes disponibles</option>
+                                <option value="" disabled>No hay formatos disponibles</option>
                             <% } %>
                         </select>
                     </div>
-                    <br>
+       
+    
                     </div>
                     <div class="section-comments">
                         <h4>Comentarios (opcional)</h4>

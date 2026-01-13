@@ -61,7 +61,7 @@
                 </div>
             </div>
 
-
+            <!-- Cards -->
             <div id="documentsContainer">
                 <div class="documents-grid" id="pendingDocuments">
                     <% if (pendingDocs && pendingDocs.length > 0) { %>
@@ -69,10 +69,10 @@
                         const estado = (doc.estado_solicitud || '').toString().toUpperCase();
                         // Usar motivo_rechazo si es RECHAZADO, si no, usar comentario normal
                         const comentario = estado === 'RECHAZADO' 
-                            ? (doc.motivo_rechazo || '')
+                            ? (doc.motivo_rechazo || '') 
                             : (doc.desc_comentario || '');
                     %>
-                        <div class="document-card" data-id="<%= doc.id_registro_solicitud %>">
+                        <div class="document-card" data-id="<%= doc.id_registro_solicitud %>" data-formato="<%= doc.nombre_formato %>">
                             <div class="document-header">
                                 <div>
                                     <div class="document-title">ID: <%= doc.id_registro_solicitud %></div>
@@ -102,6 +102,7 @@
                                 </div>
                             </div>
                             <div class="document-user"><h4>Solicitante:</h4> <%= doc.nombre_completo %></div>
+                            <div class="document-user"><h4>Formato:</h4> <%= doc.nombre_formato %></div>
                             <% if (comentario && comentario.trim()) { %>
                                 <div class="comment-section">
                                     <div class="comment-header">

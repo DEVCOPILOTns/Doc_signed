@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         return `
                             <div class="detalle-section">
                                 <div class="detalle-header">
-                                    <h3>${nombreMostrado}</h3>
+                                    <h3>${det.nombre_formato}</h3>
                                     <span class="fecha">
                                         ${estado === 'FIRMADO' ? 'Fecha de firma: ' : 'Fecha de solicitud: '}
                                         ${formatearFecha(estado === 'FIRMADO' ? det.fecha_firma : det.fecha_solicitud)}
@@ -289,8 +289,20 @@ function signAllDocuments() {
         return;
     }
 
+    // Obtener el nombre del formato desde el atributo data-formato de la tarjeta
+    const selectedCard = document.querySelector(`[data-id="${selectedDocumentId}"]`);
+    let selectedFormatName = "A4"; // valor por defecto
+    
+    if (selectedCard) {
+        selectedFormatName = selectedCard.getAttribute('data-formato');
+        if (!selectedFormatName) {
+            selectedFormatName = "A4"; // fallback si el atributo no existe
+        }
+        console.log('Formato encontrado:', selectedFormatName);
+    }
+
     const data = {
-        "selectedFormat": "A4",
+        "selectedFormat": selectedFormatName,
         "COORDS": {
             "A4": {
                 "pageIndex": 0,
@@ -302,6 +314,7 @@ function signAllDocuments() {
     };
 
     console.log('Enviando solicitud de firma para ID:', selectedDocumentId);
+    console.log('Formato enviado:', selectedFormatName);
 
     fetch(`/api/pending/${selectedDocumentId}`, {
         method: 'POST',

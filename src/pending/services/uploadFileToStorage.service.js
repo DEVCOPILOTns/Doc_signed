@@ -1,7 +1,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 
-async function uploadFileToStorage(fileBuffer, fileName) {
+async function uploadFileToStorage(fileBuffer, fileName, req) {
     try {
         // Crear carpeta de documentos firmados si no existe
         const uploadPath = path.join(__dirname, '../../../uploads/signed');
@@ -21,9 +21,11 @@ async function uploadFileToStorage(fileBuffer, fileName) {
         // Guardar el archivo
         await fs.writeFile(filePath, fileBuffer);
 
-        // Construir la URL completa con el servidor
-        const serverUrl = process.env.SERVER_URL || 'http://localhost:3000';
-        const publicUrl = `${serverUrl}/uploads/signed/${uniqueFileName}`;
+        // Construir la URL dinámicamente basada en la solicitud HTTP
+        // Funciona tanto en localhost como en dominio de producción
+        const protocol = req.protocol || 'http';
+        const host = req.get('host') || 'localhost:3000';
+        const publicUrl = `${protocol}://${host}/uploads/signed/${uniqueFileName}`;
 
         return {
             publicUrl,
