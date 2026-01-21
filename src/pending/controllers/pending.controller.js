@@ -1,6 +1,7 @@
 const PDFLib = require('pdf-lib');
-const {getDetallesDocuments, getPendingDocuments, countPendingandSigned, changeStateApplication, createDocumentSigned, getUserInfo
+const {getDetallesDocuments, getPendingDocuments, gestStage, getapplication, countPendingandSigned, createStageSigned, changeStateApplication, createDocumentSigned, getUserInfo, getStagesSignedByapplication
 } = require('../models/pending.model');
+const { getFormatById } = require('../../createFormat/models/createFormat.model');
 const { uploadFileToStorage } = require('../services/uploadFileToStorage.service');
 const signatureService = require('../../pending/services/signature.service');
 
@@ -72,9 +73,14 @@ async function signAllDocuments(req, res) {
         }
 
         const userInfo = {
-            id: req.user.id_registro_usuarios,
-            selectedDocumentId: req.params.selectedDocumentId
+            id: parseInt(req.user.id_registro_usuarios, 10),
+            selectedDocumentId: parseInt(req.params.selectedDocumentId, 10)
         };
+
+        // Validar que los IDs sean números válidos
+        if (isNaN(userInfo.id) || isNaN(userInfo.selectedDocumentId)) {
+            return res.status(400).json({ message: 'IDs de usuario o solicitud inválidos' });
+        }
 
         // Obtener información de firma del usuario
         const docPublicUrl = await getUserInfo(userInfo.id);
@@ -218,14 +224,30 @@ async function signAllDocuments(req, res) {
                     });
                 }
             }
-
+    
             // Actualizar estado si todo fue exitoso
             if (resultados.every(r => r.firmado)) {
-                await changeStateApplication(userInfo.selectedDocumentId, 'FIRMADO', null);
-            }
+                const application = await getapplication(userInfo.selectedDocumentId);
+                console.log('info', application);
+                const stageResult = await gestStage(userInfo.id, application.id_formato);
+                console.log('gestStage', stageResult);
+                const formatInfo = await getFormatById(application.id_formato);
+                console.log('formatInfo', formatInfo);
+                await createStageSigned(stageResult[0].id_registro_etapa, application.id_formato, application.id_registro_solicitud, stageResult[0].id_firmante, 'FIRMADO');
+                const stagesSigned = await getStagesSignedByapplication(userInfo.selectedDocumentId, application.id_formato);
+                console.log('los stages firmados', stagesSigned.length, 
+                    'la cantidad de firmantes del formato', formatInfo.cantidad_firmantes
+                );
+                if (stagesSigned.length === formatInfo.cantidad_firmantes) {
+                    console.log('Todos los stages firmados');
+                    await changeStateApplication(userInfo.selectedDocumentId, 'FIRMADO', null);
+                }
+                
+            } 
 
             return res.status(200).json({
                 message: 'Proceso de firma completado',
+
                 resultados
             });
 

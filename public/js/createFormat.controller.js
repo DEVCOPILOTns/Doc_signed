@@ -70,6 +70,9 @@ let etapaCounter = 0;
                 console.log('Etapas:', formato.etapas);
                 console.log('Cantidad de etapas:', formato.etapas ? formato.etapas.length : 0);
                 
+                // Guardar las etapas originales para detectar eliminadas
+                window.etapasOriginales = formato.etapas || [];
+                
                 // Marcar el formulario como edición
                 document.getElementById('formatoForm').dataset.editing = 'true';
                 document.getElementById('formatoForm').dataset.formatId = formatId;
@@ -88,7 +91,7 @@ let etapaCounter = 0;
                     formato.etapas.forEach((etapa) => {
                         etapaCounter++;
                         const etapaHTML = `
-                            <div class="etapa-card etapa-existing" data-etapa="${etapaCounter}" style="background-color: #f8f9fa; border-left: 4px solid #0066cc;">
+                            <div class="etapa-card etapa-existing" data-etapa="${etapaCounter}" data-etapa-id="${etapa.id_registro_etapa}" style="background-color: #f8f9fa; border-left: 4px solid #0066cc;">
                                 <div class="etapa-header">
                                     <div class="etapa-number" style="background-color: #e8f0ff; color: #0066cc;">${etapaCounter}</div>
                                     <span class="badge-existing" style="background-color: #d4e5ff; color: #0066cc; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">EXISTENTE</span>
@@ -283,15 +286,18 @@ let etapaCounter = 0;
                 descripcion: document.getElementById('descripcion').value.trim(),
                 estado: document.getElementById('estado').value,
                 cantidadFirmantes: etapas.length,
-                etapas: []
+                etapas: [],
+                etapasEliminar: [] // Etapas que fueron eliminadas
             };
 
             etapas.forEach((etapa, index) => {
                 const idFirmante = etapa.querySelector('select[name="idFirmante[]"]').value;
                 const palabraClave = etapa.querySelector('input[name="palabraClave[]"]').value.trim();
                 const posicionFirma = etapa.querySelector('input[name="posicionFirma[]"]').value.trim();
+                const idEtapa = etapa.dataset.etapaId; // ID de etapa existente si existe
 
                 formData.etapas.push({
+                    id_registro_etapa: idEtapa || null, // null si es nueva etapa
                     orden: index + 1,
                     idFirmante,
                     palabraClave,
@@ -299,11 +305,25 @@ let etapaCounter = 0;
                 });
             });
 
+            // Si estamos editando, calcular qué etapas fueron eliminadas
+            if (isEditing && window.etapasOriginales) {
+                const idsActuales = formData.etapas
+                    .filter(e => e.id_registro_etapa)
+                    .map(e => parseInt(e.id_registro_etapa));
+                
+                window.etapasOriginales.forEach(etapaOriginal => {
+                    if (!idsActuales.includes(etapaOriginal.id_registro_etapa)) {
+                        formData.etapasEliminar.push(etapaOriginal.id_registro_etapa);
+                    }
+                });
+            }
+
             console.log('Enviando formato:', formData);
             console.log('Modo edición:', isEditing);
 
+            //aqui hago el fetch para enviar los datos al servidor
             const url = isEditing ? `/api/createFormat/${formatId}` : '/api/createFormat';
-            const method = isEditing ? 'PUT' : 'POST';
+            const method = isEditing ? 'PUT' : 'POST'; //aqui defino el metodo segun si es edicion o creacion
 
             console.log('URL:', url);
             console.log('Método:', method);

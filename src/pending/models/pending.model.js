@@ -39,6 +39,24 @@ async function getPendingDocuments(userId, status = 'PENDIENTE') {
                     FROM etapas_firma ef
                     WHERE ef.formato_id = s.id_formato
                         AND ef.id_firmante = @userId
+                        AND NOT EXISTS (
+                            SELECT 1
+                            FROM Etapas_Firmadas efd
+                            WHERE efd.id_solicitud = s.id_registro_solicitud
+                            AND efd.id_etapa = ef.id_registro_etapa
+                        )
+                        AND NOT EXISTS (
+                            SELECT 1
+                            FROM etapas_firma ef_anterior
+                            WHERE ef_anterior.formato_id = s.id_formato
+                            AND ef_anterior.orden < ef.orden
+                            AND NOT EXISTS (
+                                SELECT 1
+                                FROM Etapas_Firmadas efd_anterior
+                                WHERE efd_anterior.id_solicitud = s.id_registro_solicitud
+                                AND efd_anterior.id_etapa = ef_anterior.id_registro_etapa
+                            )
+                        )
                 )
             `);
             
@@ -95,6 +113,36 @@ async function getDetallesDocuments(idSolicitud, estado) {
         return result.recordset;
     } catch (error) {
         console.error('Error al obtener los detalles:', error);
+        throw error;
+    }
+}
+
+async function getapplication(idSolicitud) {
+    try {
+        const pool = await config.poolPromise;
+        const result = await pool.request()
+            .input('idSolicitud', sql.Int, idSolicitud)
+            .query('SELECT * FROM Solicitudes WHERE id_registro_solicitud = @idSolicitud');
+        return result.recordset[0];
+    } catch (error) {
+        console.error('Error al obtener la solicitud:', error);
+        throw error;
+    }   
+}
+
+async function gestStage(UserId, formatoId){
+    try {
+        const pool = await config.poolPromise;
+        const result = await pool.request()
+            .input('UserId', sql.Int, UserId)
+            .input('formatoId', sql.Int, formatoId)
+            .query(`    
+                SELECT * FROM etapas_firma
+                WHERE id_firmante = @UserId AND formato_id = @formatoId
+            `);
+        return result.recordset; 
+    } catch (error) {
+        console.error('Error al obtener las etapas de firma:', error);
         throw error;
     }
 }
@@ -168,6 +216,29 @@ async function createDocumentSigned(url, formato, idFirmante, idDetalleSolicitud
     }
 }
 
+async function createStageSigned (idEtapa, idFormato, idSolicitud, idFirmante, estadoFirma) {
+    try {
+        console.log('Creando etapa firmada con:', idEtapa, idFormato, idSolicitud, idFirmante, estadoFirma)
+        const pool = await config.poolPromise;
+        const result = await pool.request()
+            .input('idEtapa', sql.Int, idEtapa)
+            .input('idformato', sql.Int, idFormato)
+            .input('idSolicitud', sql.Int, idSolicitud)
+            .input('idFirmante', sql.Int, idFirmante)
+            .input('estadoFirma', sql.VarChar, estadoFirma)
+            .query(`
+                INSERT INTO Etapas_Firmadas 
+                (id_etapa, id_formato, id_solicitud, id_firmante, fecha_firma, estado_firma)
+                VALUES 
+                (@idEtapa, @idformato, @idSolicitud, @idFirmante, GETDATE(), @estadoFirma);
+                `);
+        return result;
+    } catch (error) {
+        console.error('Error al crear etapa firmada:', error);
+        throw error;
+    }
+}
+                
 async function changeStateApplication(idSolicitud, newState, motivo = null) {
     try {
         const pool = await config.poolPromise;
@@ -206,6 +277,20 @@ async function getUserInfo(id_registro_usuarios){
     }
 }
 
+async function getStagesSignedByapplication(id_solicitud, id_formato) {
+    try {
+        let pool = await config.poolPromise;
+        let result = await pool.request()
+            .input('id_solicitud', sql.Int, id_solicitud)
+            .input('id_formato', sql.Int, id_formato)
+            .query('SELECT * FROM etapas_firmadas WHERE id_solicitud = @id_solicitud AND id_formato = @id_formato');
+        return result.recordset;
+    } catch (error) {
+        console.error('Error en getStagesSignedByapplication:', error);
+        throw error;
+    }
+}
+
 module.exports = {
     getPendingDocuments,
     getDetallesDocuments,
@@ -213,5 +298,9 @@ module.exports = {
     countPendingandSigned,
     getUserInfo,
     changeStateApplication,
-    createDocumentSigned
+    createDocumentSigned,
+    createStageSigned,
+    getapplication,
+    gestStage,
+    getStagesSignedByapplication
 };

@@ -1,5 +1,5 @@
 const {countPendingandSigned } = require('../../pending/models/pending.model');
-const { saveFormat, saveStages, getFormatsByUser, getFormatById, updateFormat, deleteStagesByFormatId } = require('../models/createFormat.model');
+const { saveFormat, saveStages, getFormatsByUser, getFormatById, updateFormat, changeStagesByFormatId, updateStage, updateFormatStageCount} = require('../models/createFormat.model');
 const { getSignerUsers } = require('../../masiveSign/models/request.model');
 
 async function createFormatRender(req, res) {
@@ -68,6 +68,9 @@ async function uploadFormat(req, res) {
             await saveStages(id_formato, req.body.etapas);
         }
         
+        // Actualizar cantidad de firmantes basado en etapas activas
+        await updateFormatStageCount(id_formato);
+        
         res.status(200).send('Formato creado exitosamente');
     } catch (error) { 
         console.error('Error al subir el formato:', error);
@@ -92,13 +95,33 @@ async function updateFormatData(req, res) {
             req.body.cantidadFirmantes
         );
 
-        // Eliminar etapas anteriores
-        await deleteStagesByFormatId(id_formato);
-
-        // Guardar nuevas etapas
-        if (req.body.etapas && req.body.etapas.length > 0) {
-            await saveStages(id_formato, req.body.etapas);
+        // Desactivar solo las etapas que fueron eliminadas
+        if (req.body.etapasEliminar && req.body.etapasEliminar.length > 0) {
+            for (const id_etapa of req.body.etapasEliminar) {
+                await changeStagesByFormatId(id_etapa);
+            }
         }
+
+        // Procesar etapas (actualizar existentes e insertar nuevas)
+        if (req.body.etapas && req.body.etapas.length > 0) {
+            for (const etapa of req.body.etapas) {
+                if (etapa.id_registro_etapa) {
+                    // Actualizar etapa existente
+                    await updateStage(
+                        etapa.id_registro_etapa,
+                        etapa.orden,
+                        etapa.idFirmante,
+                        etapa.palabraClave
+                    );
+                } else {
+                    // Insertar nueva etapa
+                    await saveStages(id_formato, [etapa]);
+                }
+            }
+        }
+        
+        // Actualizar cantidad de firmantes basado en etapas activas
+        await updateFormatStageCount(id_formato);
         
         res.status(200).send('Formato actualizado exitosamente');
     } catch (error) {

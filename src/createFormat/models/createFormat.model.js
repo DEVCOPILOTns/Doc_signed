@@ -26,15 +26,15 @@ async function saveStages(id_formato, etapas) {
                 .input('orden', sql.Int, etapa.orden)
                 .input('id_firmante', sql.Int, etapa.idFirmante)
                 .input('palabra_clave', sql.VarChar, etapa.palabraClave)
-        
-                .query('INSERT INTO etapas_firma (formato_id, orden, id_firmante, palabra_clave) VALUES (@id_formato, @orden, @id_firmante, @palabra_clave)');
+                .input('estado', sql.VarChar, etapa.estado || 'ACTIVO')
+
+                .query('INSERT INTO etapas_firma (formato_id, orden, id_firmante, palabra_clave, estado) VALUES (@id_formato, @orden, @id_firmante, @palabra_clave, @estado)');
         }
     } catch (error) {
         console.error('Error al guardar las etapas:', error);
         throw error;
     }
 }
-
 
 async function getFormatsByUser(id_usuario) {
     try {
@@ -93,18 +93,78 @@ async function updateFormat(id_formato, nombreFormato, descripcion, estado, cant
     }
 }
 
-async function deleteStagesByFormatId(id_formato) {
+async function changeStagesByFormatId(id_registro_etapa) {
     try {
         let pool = await poolPromise;
         await pool.request()
-            .input('id_formato', sql.Int, id_formato)
-            .query('DELETE FROM etapas_firma WHERE formato_id = @id_formato');
+            .input('id_registro_etapa', sql.Int, id_registro_etapa)
+            .query("UPDATE etapas_firma SET estado = 'INACTIVO' WHERE id_registro_etapa = @id_registro_etapa");
         return true;
     } catch (error) {
-        console.error('Error al eliminar etapas:', error);
+        console.error('Error al cambiar etapa:', error);
         throw error;
     }
 }
+
+async function updateStage(id_registro_etapa, orden, id_firmante, palabra_clave) {
+    try {
+        let pool = await poolPromise;
+        await pool.request()
+            .input('id_registro_etapa', sql.Int, id_registro_etapa)
+            .input('orden', sql.Int, orden)
+            .input('id_firmante', sql.Int, id_firmante)
+            .input('palabra_clave', sql.VarChar, palabra_clave)
+            .query(`
+                UPDATE etapas_firma 
+                SET orden = @orden, 
+                    id_firmante = @id_firmante, 
+                    palabra_clave = @palabra_clave
+                WHERE id_registro_etapa = @id_registro_etapa
+            `);
+        return true;
+    } catch (error) {
+        console.error('Error al actualizar etapa:', error);
+        throw error;
+    }
+}
+
+async function countActiveStages(id_formato) {
+    try {
+        let pool = await poolPromise;
+        let result = await pool.request()
+            .input('id_formato', sql.Int, id_formato)
+            .query(`
+                SELECT COUNT(*) as total 
+                FROM etapas_firma 
+                WHERE formato_id = @id_formato AND estado = 'ACTIVO'
+            `);
+        return result.recordset[0].total;
+    } catch (error) {
+        console.error('Error al contar etapas activas:', error);
+        throw error;
+    }
+}
+
+async function updateFormatStageCount(id_formato) {
+    try {
+        let totalEtapas = await countActiveStages(id_formato);
+        let pool = await poolPromise;
+        await pool.request()
+            .input('id_formato', sql.Int, id_formato)
+            .input('cantidad_firmantes', sql.Int, totalEtapas)
+            .query(`
+                UPDATE formatos 
+                SET cantidad_firmantes = @cantidad_firmantes
+                WHERE id_registro_formato = @id_formato
+            `);
+        return true;
+    } catch (error) {
+        console.error('Error al actualizar cantidad de firmantes:', error);
+        throw error;
+    }
+}
+
+
 
 module.exports = { 
     saveFormat,
@@ -112,5 +172,8 @@ module.exports = {
     getFormatsByUser,
     getFormatById,
     updateFormat,
-    deleteStagesByFormatId
+    changeStagesByFormatId,
+    updateStage,
+    countActiveStages,
+    updateFormatStageCount
 };
