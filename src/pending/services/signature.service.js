@@ -8,77 +8,73 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = require.resolve('pdfjs-dist/build/pdf.w
 
 class SignatureService {
   constructor() {
-    this.signatureAnchors = {
-      GCLPPR: {
-        // Elementos específicos para buscar
-        atentamenteText: 'Atentamente',
-        nombreText: 'Nombre',
-        gerenteText: 'Gerente General / Representante Legal',
-        // Configuración de la firma
-        offsetY: -40,     // Ajuste vertical desde "Atentamente"
-        offsetX: 30,     // Ajuste horizontal desde "Atentamente"
-        width: 130,       // Ancho de la firma
-        height: 35        // Alto de la firma
-      }
+    // Configuración por defecto simple para dimensiones de firma
+    this.defaultSignatureConfig = {
+      offsetY: 40,     // Ajuste vertical desde la palabra clave encontrada
+      offsetX: 10,     // Ajuste horizontal desde la palabra clave encontrada
+      width: 160,       // Ancho de la firma
+      height: 55        // Alto de la firma
     };
   }
 
-  async detectSignatureArea(pdfBuffer, documentType = 'default') {
+  async detectSignatureArea(pdfBuffer, documentType = 'default', palabraClave = null) {
     try {
-      const pdfDoc = await PDFLib.PDFDocument.load(pdfBuffer);
-      let page = pdfDoc.getPage(0);
-      let textItems = await this.getTextPositions(page);
-      const config = this.signatureAnchors[documentType] || this.signatureAnchors.GCLPPR;
-      
-      // Buscar "Atentamente" en la primera página
-      let atentamentePosition = null;
-      let pageIndex = 0;
+      console.log('\n📌 ===== INICIANDO DETECCIÓN DE FIRMA =====');
+      console.log(`📝 Tipo de documento: "${documentType}"`);
+      console.log(`🔑 Palabra clave recibida: "${palabraClave}"`);
+      console.log(`📄 Tamaño del PDF: ${(pdfBuffer.byteLength / 1024).toFixed(2)} KB`);
 
-      for (const item of textItems) {
-        if (item.str.trim() === config.atentamenteText) {
-          atentamentePosition = item;
-          break;
-        }
+      // Validar que se recibió una palabra clave
+      if (!palabraClave) {
+        throw new Error('❌ No se proporcionó palabra clave para buscar');
       }
 
-      // Si no se encuentra en la primera página, buscar en la última
-      if (!atentamentePosition && pdfDoc.getPageCount() > 1) {
-        pageIndex = 0; // Volvemos a la primera página
-        page = pdfDoc.getPage(pageIndex);
-        textItems = await this.getTextPositions(page);
-        
+      const pdfDoc = await PDFLib.PDFDocument.load(pdfBuffer);
+      const totalPages = pdfDoc.getPageCount();
+      console.log(`📖 Total de páginas en PDF: ${totalPages}`);
+
+      const config = this.defaultSignatureConfig;
+      let posicionEncontrada = null;
+      let pageEncontrada = 0;
+
+      // Buscar en todas las páginas
+      console.log(`\n🔍 Buscando palabra clave: "${palabraClave}"`);
+      for (let pageIndex = 0; pageIndex < totalPages; pageIndex++) {
+        const page = pdfDoc.getPage(pageIndex);
+        const textItems = await this.getTextPositions(page, pageIndex);
+
         for (const item of textItems) {
-          if (item.str.trim() === config.atentamenteText) {
-            atentamentePosition = item;
+          if (item.str.trim().toLowerCase() === palabraClave.toLowerCase()) {
+            posicionEncontrada = item;
+            pageEncontrada = pageIndex;
+            console.log(`✅ ¡ENCONTRADO! en página ${pageIndex + 1}`);
+            console.log(`   Texto: "${item.str}"`);
+            console.log(`   Posición X: ${item.x.toFixed(2)}, Y: ${item.y.toFixed(2)}`);
             break;
           }
         }
+
+        if (posicionEncontrada) break;
       }
 
-      if (!atentamentePosition) {
-        console.warn('⚠️ No se encontró "Atentamente" en ninguna página');
+      if (!posicionEncontrada) {
+        console.warn(`\n⚠️ No se encontró "${palabraClave}" en ninguna página del PDF`);
+        const page = pdfDoc.getPage(0);
         return this.getDefaultPosition(page.getWidth(), page.getHeight());
       }
 
-      // Usar los offsets definidos en el constructor
-      const signatureX = atentamentePosition.x + config.offsetX;
-      const signatureY = atentamentePosition.y + config.offsetY;
+      // Calcular posición final de la firma
+      const signatureX = posicionEncontrada.x + config.offsetX;
+      const signatureY = posicionEncontrada.y + config.offsetY;
 
-      console.log('Posición calculada para la firma:', {
-        x: signatureX,
-        y: signatureY,
-        offsetsUsados: {
-          x: config.offsetX,
-          y: config.offsetY
-        },
-        atentamentePos: {
-          x: atentamentePosition.x,
-          y: atentamentePosition.y
-        }
-      });
+      console.log(`\n📍 Posición final de firma:`);
+      console.log(`   X: ${signatureX.toFixed(2)} (original: ${posicionEncontrada.x.toFixed(2)} + offset: ${config.offsetX})`);
+      console.log(`   Y: ${signatureY.toFixed(2)} (original: ${posicionEncontrada.y.toFixed(2)} + offset: ${config.offsetY})`);
+      console.log(`   Ancho: ${config.width}, Alto: ${config.height}`);
+      console.log('===== FIN DETECCIÓN =====\n');
 
       return {
-        pageIndex: 0,
+        pageIndex: pageEncontrada,
         x: signatureX,
         y: signatureY,
         width: config.width,
@@ -86,26 +82,22 @@ class SignatureService {
       };
 
     } catch (error) {
-      console.error('❌ Error detectando área de firma:', error);
+      console.error('❌ Error detectando área de firma:', error.message);
       throw error;
     }
   }
 
-  async getTextPositions(page) {
+  async getTextPositions(page, pageIndex = 0) {
     try {
         const pageBuffer = await page.doc.save();
         const pdf = await pdfjsLib.getDocument({data: pageBuffer}).promise;
-        // Usamos el índice 1 ya que pdf.js usa índices basados en 1
-        const pdfPage = await pdf.getPage(1);
+        // pdf.js usa índices basados en 1, PDFLib usa índices basados en 0
+        const pdfPage = await pdf.getPage(pageIndex + 1);
         const textContent = await pdfPage.getTextContent();
         
-        // Imprimir todos los elementos de texto para debugging
-        console.log('Elementos de texto encontrados:');
-        textContent.items.forEach(item => {
-            console.log(`"${item.str}" en posición Y: ${item.transform[5]}`);
-        });
+        console.log(`   📄 Página ${pageIndex + 1}: ${textContent.items.length} elementos de texto`);
         
-        // Ordenar los elementos por posición Y (de abajo hacia arriba)
+        // Retornar los elementos de texto con sus posiciones
         return textContent.items
             .map(item => ({
                 str: item.str,
@@ -116,8 +108,7 @@ class SignatureService {
             }))
             .sort((a, b) => b.y - a.y);
     } catch (error) {
-        console.error('Error detallado obteniendo posiciones de texto:', error);
-        console.log('Contenido del PDF:', page);
+        console.error(`❌ Error obteniendo posiciones de texto en página ${pageIndex + 1}:`, error.message);
         return [];
     }
   }

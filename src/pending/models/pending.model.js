@@ -290,6 +290,65 @@ async function getStagesSignedByapplication(id_solicitud, id_formato) {
         throw error;
     }
 }
+async function updateApplicationActualStage(id_solicitud, actual_stage) {
+    try {
+        const pool = await config.poolPromise;
+        const result = await pool.request()
+            .input('id_solicitud', sql.Int, id_solicitud)
+            .input('actual_stage', sql.Int, actual_stage)
+            .query(`
+                UPDATE solicitudes 
+                SET etapa_actual = @actual_stage
+                WHERE id_registro_solicitud = @id_solicitud
+            `);
+        return result;
+    } catch (error) {
+        console.error('Error al actualizar la etapa actual de la solicitud:', error);
+        throw error;
+    }
+}
+
+async function getLastSignedDocument(id_solicitud, id_detalle) {
+    try {
+        const pool = await config.poolPromise;
+        const result = await pool.request()
+            .input('id_solicitud', sql.Int, id_solicitud)
+            .input('id_detalle', sql.Int, id_detalle)
+            .query(`
+                SELECT TOP 1 
+                    id_detalle_firmado,
+                    url_archivo_firmado,
+                    fecha_firma
+                FROM Documentos_Firmados 
+                WHERE id_solicitud = @id_solicitud
+                    AND id_detalle = @id_detalle
+                ORDER BY id_detalle_firmado DESC
+            `);
+        return result.recordset[0] || null;
+    } catch (error) {
+        console.error('Error al obtener el último documento firmado:', error);
+        throw error;
+    }
+}
+
+async function updateDocumentSigned(id_detalle_firmado, newUrl) {
+    try {
+        const pool = await config.poolPromise;
+        const result = await pool.request()
+            .input('id_detalle_firmado', sql.Int, id_detalle_firmado)
+            .input('newUrl', sql.VarChar, newUrl)
+            .query(`
+                UPDATE Documentos_Firmados 
+                SET url_archivo_firmado = @newUrl
+                WHERE id_detalle_firmado = @id_detalle_firmado
+            `);
+        console.log('Documento firmado actualizado:', id_detalle_firmado);
+        return result;
+    } catch (error) {
+        console.error('Error al actualizar documento firmado:', error);
+        throw error;
+    }
+}
 
 module.exports = {
     getPendingDocuments,
@@ -302,5 +361,8 @@ module.exports = {
     createStageSigned,
     getapplication,
     gestStage,
-    getStagesSignedByapplication
+    getStagesSignedByapplication,
+    updateApplicationActualStage,
+    getLastSignedDocument,
+    updateDocumentSigned
 };

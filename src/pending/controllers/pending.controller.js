@@ -1,5 +1,5 @@
 const PDFLib = require('pdf-lib');
-const {getDetallesDocuments, getPendingDocuments, gestStage, getapplication, countPendingandSigned, createStageSigned, changeStateApplication, createDocumentSigned, getUserInfo, getStagesSignedByapplication
+const {getDetallesDocuments, getPendingDocuments, gestStage, getapplication, countPendingandSigned, createStageSigned, changeStateApplication, createDocumentSigned, getUserInfo, getStagesSignedByapplication, updateApplicationActualStage, getLastSignedDocument, updateDocumentSigned
 } = require('../models/pending.model');
 const { getFormatById } = require('../../createFormat/models/createFormat.model');
 const { uploadFileToStorage } = require('../services/uploadFileToStorage.service');
@@ -146,6 +146,22 @@ async function signAllDocuments(req, res) {
                 url: firmaUrl.toString()
             });
 
+
+            const application = await getapplication(userInfo.selectedDocumentId);
+                console.log('info', application);
+            const stageResult = await gestStage(userInfo.id, application.id_formato);
+                console.log('gestStage', stageResult);
+            const formatInfo = await getFormatById(application.id_formato);
+                console.log('formatInfo', formatInfo);
+            await createStageSigned(stageResult[0].id_registro_etapa, application.id_formato, application.id_registro_solicitud, stageResult[0].id_firmante, 'FIRMADO');
+            const stagesSigned = await getStagesSignedByapplication(userInfo.selectedDocumentId, application.id_formato);
+                console.log('los stages firmados', stagesSigned.length, 
+                            'la cantidad de firmantes del formato', formatInfo.cantidad_firmantes);
+            
+            // Calcular siguiente etapa (después de firmar) - no exceder cantidad_firmantes
+            const proximaEtapa = Math.min(stagesSigned.length + 1, formatInfo.cantidad_firmantes);
+            await updateApplicationActualStage(application.id_registro_solicitud, proximaEtapa);
+            
             // Continuar con el procesamiento de documentos...
             const documentos = await getDetallesDocuments(userInfo.selectedDocumentId, 'PENDIENTE');
             if (!documentos?.length) {
@@ -161,8 +177,19 @@ async function signAllDocuments(req, res) {
                         throw new Error('URL del archivo no disponible');
                     }
 
+                    let pdfUrlToUse = doc.url_archivo;
+
+                    // Si no es la primera firma, obtener el documento ya firmado (con las firmas anteriores)
+                    if (stagesSigned.length > 0) {
+                        const lastSignedDoc = await getLastSignedDocument(userInfo.selectedDocumentId, doc.id_registro_detalles);
+                        if (lastSignedDoc?.url_archivo_firmado) {
+                            console.log('Usando documento previamente firmado:', lastSignedDoc.url_archivo_firmado);
+                            pdfUrlToUse = lastSignedDoc.url_archivo_firmado;
+                        }
+                    }
+
                     // Asegurarse que la URL es absoluta
-                    const pdfUrl = new URL(doc.url_archivo, 'http://localhost:3000').toString();
+                    const pdfUrl = new URL(pdfUrlToUse, 'http://localhost:3000').toString();
                     
                     // Descargar PDF con validación de tipo
                     const pdfResponse = await fetch(pdfUrl, {
@@ -183,13 +210,16 @@ async function signAllDocuments(req, res) {
                     } catch (error) {
                         throw new Error('El archivo no es un PDF válido');
                     }
+                    
 
                     // Detectar área e insertar firma
                     const signatureArea = await signatureService.detectSignatureArea(
-                        new Uint8Array(pdfBuffer), 
-                        selectedFormat
+                        new Uint8Array(pdfBuffer),
+                        selectedFormat,
+                        stageResult[0].palabra_clave
                     );
 
+                    // Insertar la firma en el PDF
                     const signedPdfBytes = await signatureService.insertSignature(
                         new Uint8Array(pdfBuffer),
                         new Uint8Array(sigBuffer),
@@ -201,13 +231,23 @@ async function signAllDocuments(req, res) {
                     const { publicUrl } = await uploadFileToStorage(signedPdfBytes, fileName, req);
 
                     // Registrar documento firmado
-                    await createDocumentSigned(
-                        publicUrl,
-                        selectedFormat, 
-                        userInfo.id,
-                        doc.id_registro_detalles,
-                        userInfo.selectedDocumentId
-                    );
+                    // Si ya existía un documento firmado anterior, actualizar su URL
+                    const lastSigned = await getLastSignedDocument(userInfo.selectedDocumentId, doc.id_registro_detalles);
+                    if (lastSigned) {
+                        // Actualizar el documento existente con la nueva URL (que incluye todas las firmas)
+                        console.log('Actualizando documento existente:', lastSigned.id_detalle_firmado);
+                        await updateDocumentSigned(lastSigned.id_detalle_firmado, publicUrl);
+                    } else {
+                        // Crear nuevo registro si es el primero
+                        console.log('Creando nuevo registro de documento firmado');
+                        await createDocumentSigned(
+                            publicUrl,
+                            selectedFormat, 
+                            userInfo.id,
+                            doc.id_registro_detalles,
+                            userInfo.selectedDocumentId
+                        );
+                    }
 
                     resultados.push({
                         documento: doc.nombre_original,
@@ -227,17 +267,7 @@ async function signAllDocuments(req, res) {
     
             // Actualizar estado si todo fue exitoso
             if (resultados.every(r => r.firmado)) {
-                const application = await getapplication(userInfo.selectedDocumentId);
-                console.log('info', application);
-                const stageResult = await gestStage(userInfo.id, application.id_formato);
-                console.log('gestStage', stageResult);
-                const formatInfo = await getFormatById(application.id_formato);
-                console.log('formatInfo', formatInfo);
-                await createStageSigned(stageResult[0].id_registro_etapa, application.id_formato, application.id_registro_solicitud, stageResult[0].id_firmante, 'FIRMADO');
-                const stagesSigned = await getStagesSignedByapplication(userInfo.selectedDocumentId, application.id_formato);
-                console.log('los stages firmados', stagesSigned.length, 
-                    'la cantidad de firmantes del formato', formatInfo.cantidad_firmantes
-                );
+
                 if (stagesSigned.length === formatInfo.cantidad_firmantes) {
                     console.log('Todos los stages firmados');
                     await changeStateApplication(userInfo.selectedDocumentId, 'FIRMADO', null);
@@ -247,7 +277,9 @@ async function signAllDocuments(req, res) {
 
             return res.status(200).json({
                 message: 'Proceso de firma completado',
-
+                etapaActual: proximaEtapa,
+                totalEtapas: formatInfo.cantidad_firmantes,
+                estaCompleto: stagesSigned.length === formatInfo.cantidad_firmantes,
                 resultados
             });
 

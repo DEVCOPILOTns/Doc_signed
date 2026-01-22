@@ -335,7 +335,7 @@ function closeCommentModal() {
 
 // fuera de document.addEventListener(...)
 function signAllDocuments() {
-    console.log('Intentando firmar documentos. ID seleccionado:', selectedDocumentId);
+    //console.log('Intentando firmar documentos. ID seleccionado:', selectedDocumentId);
     
     if (!selectedDocumentId) {
         alert('Por favor, seleccione una solicitud para firmar');
@@ -354,7 +354,7 @@ function signAllDocuments() {
         }
     };
 
-    console.log('Enviando solicitud de firma para ID:', selectedDocumentId);
+    //console.log('Enviando solicitud de firma para ID:', selectedDocumentId);
 
     fetch(`/api/pending/${selectedDocumentId}`, {
         method: 'POST',
