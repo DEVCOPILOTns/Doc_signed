@@ -580,6 +580,42 @@ body::before, body::after {
             transform: none;
         }
 
+        /* Tarjeta Inactiva */
+        .format-card-inactive {
+            background: rgba(229, 231, 235, 0.6);
+            border: 2px dashed var(--gray-400);
+            filter: grayscale(40%);
+        }
+
+        .format-card-inactive:hover {
+            border-color: var(--gray-400);
+            box-shadow: var(--shadow-sm);
+            filter: grayscale(30%);
+        }
+
+        .format-card-inactive .format-name,
+        .format-card-inactive .format-status,
+        .format-card-inactive .meta-value {
+            color: var(--text-500);
+        }
+
+        /* Mantener botones normales en tarjetas inactivas */
+        .format-card-inactive .btn-action {
+            color: inherit;
+        }
+
+        .format-card-inactive .btn-edit {
+            border-color: var(--primary-500);
+            color: var(--primary-500);
+            filter: none;
+        }
+
+        .format-card-inactive .btn-activate {
+            border-color: var(--success-500);
+            color: var(--success-500);
+            filter: none;
+        }
+
         /* Header de Tarjeta */
         .format-card-header {
             display: flex;
@@ -693,6 +729,12 @@ body::before, body::after {
             color: white;
             border-radius: 50%;
             font-weight: 700;
+            filter: none;
+        }
+
+        .format-card-inactive .format-signer-count {
+            color: white;
+            filter: none;
         }
 
         /* Acciones */
@@ -741,6 +783,33 @@ body::before, body::after {
         .btn-delete:hover {
             background: rgba(239, 68, 68, 0.1);
             border-color: var(--danger-600);
+        }
+
+        .btn-activate {
+            border-color: var(--success-500);
+            color: var(--success-500);
+        }
+
+        .btn-activate:hover {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: var(--success-600);
+        }
+
+        /* Botones Deshabilitados */
+        .btn-action.disabled,
+        .btn-action:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-color: var(--gray-100);
+            border-color: var(--gray-300);
+            color: var(--gray-400);
+        }
+
+        .btn-action.disabled:hover,
+        .btn-action:disabled:hover {
+            transform: none;
+            background-color: var(--gray-100);
+            border-color: var(--gray-300);
         }
 
         /* Estado Vacío */

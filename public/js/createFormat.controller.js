@@ -172,6 +172,79 @@ let etapaCounter = 0;
             }
         }
 
+        //Función para inhabilitar formato
+        async function disableFormat(formatId) {
+            try {
+                console.log('Inhabilitando formato ID:', formatId);
+                const url = `/api/createFormat/disable/${formatId}`;
+                const response = await fetch(url, { method: 'PUT' });
+                console.log('Response status:', response.status);
+                console.log('Response statusText:', response.statusText);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Response error:', errorText);
+                    throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
+                }
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Éxito',
+                    text: 'Formato inhabilitado exitosamente',
+                    confirmButtonColor: '#3085d6',  
+                    confirmButtonText: 'Continuar'
+                }).then(() => {
+                    // Recarga la página para ver los cambios
+                    window.location.reload();
+                });
+            } catch (error) {
+                console.error('Error al inhabilitar el formato:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error al inhabilitar el formato: ' + error.message,
+                    confirmButtonColor: '#d33',
+                    confirmButtonText: 'Cerrar'
+                });
+            }
+        }
+
+        async function activateFormat(formatId) {
+            try {
+                console.log('Activando formato ID:', formatId);
+                const url = `/api/createFormat/activate/${formatId}`;
+                const response = await fetch(url, { method: 'PUT' });
+                console.log('Response status:', response.status);
+                console.log('Response statusText:', response.statusText);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Response error:', errorText);
+                    throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
+                }
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Éxito',
+                    text: 'Formato activado exitosamente',
+                    confirmButtonColor: '#3085d6',  
+                    confirmButtonText: 'Continuar'
+                }).then(() => {
+                    // Recarga la página para ver los cambios
+                    window.location.reload();
+                });
+            }
+            catch (error) {
+                console.error('Error al activar el formato:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error al activar el formato: ' + error.message,
+                    confirmButtonColor: '#d33',
+                    confirmButtonText: 'Cerrar'
+                });
+            }
+        }
+
+
+
+
         // Crear opciones del select de firmantes
         function generateSignerOptions(selectedId = null) {
             if (!signerUsers || signerUsers.length === 0) {

@@ -7,19 +7,6 @@ const signatureService = require('../../pending/services/signature.service');
 
 
 
-//async function pendingRender(req, res) {
-  //try {
-    //let pendingDocs = [];
-    //if (req.user && req.user.id_registro_usuarios) {
-      //pendingDocs = await getPendingDocuments(req.user.id_registro_usuarios);
-    //}
-    //res.render('pending/views/pendingIndex', { pendingDocs });
-  //} catch (error) {
-    //console.error('Error al renderizar index pendientes:', error);
-    //res.render('pending/views/pendingIndex', { pendingDocs: [], error: 'No se pudieron cargar las solicitudes pendientes.' });
-  //}
-//}
-
 async function getPending(req, res) {
   try {
     if (!req.user || !req.user.id_registro_usuarios) {
@@ -29,7 +16,9 @@ async function getPending(req, res) {
       });
     }
     // Lee el parámetro status
-    const status = req.query.status || 'PENDIENTE';//aqui estoy 
+    const status = req.query.status || 'PENDIENTE';//aqui estoy trayendo el status pendiente o firmado 
+    console.log('estado:', status);
+    
     const resultPending = await getPendingDocuments(req.user.id_registro_usuarios, status);
     const pendingData = await countPendingandSigned(req.user.id_registro_usuarios);
     return res.render('pending/views/pendingIndex', {

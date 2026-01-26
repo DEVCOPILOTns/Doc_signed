@@ -164,6 +164,19 @@ async function updateFormatStageCount(id_formato) {
     }
 }
 
+async function changeFormatStatus(id_formato, status) {
+    try {
+        let pool = await poolPromise;
+        await pool.request()
+            .input('id_formato', sql.Int, id_formato)
+            .input('estado', sql.VarChar, status)
+            .query("UPDATE formatos SET estado = @estado WHERE id_registro_formato = @id_formato");
+        return true;
+    } catch (error) {
+        console.error('Error al cambiar estado del formato:', error);
+        throw error;
+    }
+}
 
 
 module.exports = { 
@@ -175,5 +188,6 @@ module.exports = {
     changeStagesByFormatId,
     updateStage,
     countActiveStages,
-    updateFormatStageCount
+    updateFormatStageCount,
+    changeFormatStatus
 };

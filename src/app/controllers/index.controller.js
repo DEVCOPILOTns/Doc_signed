@@ -3,7 +3,7 @@ async function IndexRender(req, res) {
    const resultPending = await getPendingDocuments(req.user.id_registro_usuarios);
   res.render('app/views/index', {
     pendingDocuments: resultPending.length,
-
+    user: req.user
   });
 }
 

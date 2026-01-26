@@ -1,5 +1,5 @@
 const {countPendingandSigned } = require('../../pending/models/pending.model');
-const { saveFormat, saveStages, getFormatsByUser, getFormatById, updateFormat, changeStagesByFormatId, updateStage, updateFormatStageCount} = require('../models/createFormat.model');
+const { saveFormat, saveStages, getFormatsByUser, getFormatById, updateFormat, changeStagesByFormatId, updateStage, updateFormatStageCount, changeFormatStatus} = require('../models/createFormat.model');
 const { getSignerUsers } = require('../../masiveSign/models/request.model');
 
 async function createFormatRender(req, res) {
@@ -130,10 +130,45 @@ async function updateFormatData(req, res) {
     }
 }
 
+async function disableFormat(req, res) {
+    try {
+        const id_formato = parseInt(req.params.id);
+        
+        if (isNaN(id_formato)) {
+            return res.status(400).json({ error: 'ID de formato inválido' });
+        }
+
+        console.log('Inhabilitando formato ID:', id_formato);
+        await changeFormatStatus(id_formato, 'inactivo');
+
+        res.status(200).json({ message: 'Formato inhabilitado exitosamente' });
+    } catch (error) {
+        console.error('Error al inhabilitar el formato:', error);
+        res.status(500).json({ error: 'Error al inhabilitar el formato: ' + error.message });
+    }
+}
+
+async function activateFormat(req, res) {
+    try {
+        const id_formato = parseInt(req.params.id);
+        if (isNaN(id_formato)) {
+            return res.status(400).json({ error: 'ID de formato inválido' });
+        }
+        console.log('Activando formato ID:', id_formato);
+        await changeFormatStatus(id_formato, 'activo');
+        res.status(200).json({ message: 'Formato activado exitosamente' });
+    } catch (error) {
+        console.error('Error al activar el formato:', error);
+        res.status(500).json({ error: 'Error al activar el formato: ' + error.message });
+    }
+}
+
 module.exports = {
     createFormatRender,
     uploadFormat,
     getSigners,
     getFormat,
-    updateFormatData
+    updateFormatData,
+    disableFormat,
+    activateFormat
 };

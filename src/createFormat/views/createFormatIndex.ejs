@@ -50,7 +50,7 @@
             <% if (formats && formats.length > 0) { %>
                 <div class="format-grid">
                     <% formats.forEach(function(format) { %>
-                        <div class="format-card">
+                        <div class="format-card <%= format.estado === 'inactivo' ? 'format-card-inactive' : '' %>">
                             <div class="format-card-header">
                                 <span class="format-id"><%= format.id_registro_formato %></span>
                                 <h3 class="format-name">
@@ -88,9 +88,13 @@
                                     <span>✏️</span>
                                     Editar
                                 </button>
-                                <button class="btn-action btn-delete" title="Eliminar formato">
-                                    <span>🗑️</span>
-                                    Eliminar
+                                <button 
+                                    class="btn-action <%= format.estado === 'activo' ? 'btn-delete' : 'btn-activate' %>" 
+                                    title="<%= format.estado === 'activo' ? 'Inhabilitar formato' : 'Activar formato' %>" 
+                                    onclick="<%= format.estado === 'activo' ? 'disableFormat' : 'activateFormat' %>(<%= format.id_registro_formato || '' %>)"
+                                >
+                                    <span><%= format.estado === 'activo' ? '🗑️' : '✅' %></span>
+                                    <%= format.estado === 'activo' ? 'Inhabilitar' : 'Activar' %>
                                 </button>
                             </div>
                         </div>

@@ -62,6 +62,7 @@ async function getFormats() {
             .query(`
                 SELECT *
                 FROM formatos
+                WHERE estado = 'activo'
             `);
         return result.recordset;
     } catch (error) {

@@ -6,10 +6,39 @@ const config = require('../../../db.js');
 async function getPendingDocuments(userId, status = 'PENDIENTE') {
     try {
         const pool = await config.poolPromise;
-        const result = await pool.request()
-            .input('userId', sql.Int, userId)
-            .input('status', sql.VarChar, status)
-            .query(`
+        let query;
+
+        if (status === 'FIRMADO') {
+            // Para documentos firmados: solo trae las solicitudes FIRMADAS donde el usuario es signer
+            query = `
+                SELECT 
+                    s.id_registro_solicitud,
+                    s.id_solicitante,
+                    s.id_formato,
+                    s.estado_solicitud,
+                    s.tipo_solicitud,
+                    s.fecha_solicitud,
+                    s.motivo_rechazo,
+                    s.fecha_firma as fecha_mostrar,
+                    u.nombre_usuario,
+                    u.cedula,
+                    u.nombre_completo,
+                    s.desc_comentario,
+                    f.nombre_formato
+                FROM solicitudes AS s
+                JOIN Usuario AS u ON s.id_solicitante = u.id_registro_usuarios
+                LEFT JOIN formatos AS f ON s.id_formato = f.id_registro_formato
+                WHERE s.estado_solicitud = @status
+                AND EXISTS (
+                    SELECT 1
+                    FROM etapas_firma ef
+                    WHERE ef.formato_id = s.id_formato
+                        AND ef.id_firmante = @userId
+                )
+            `;
+        } else {
+            // Para documentos pendientes
+            query = `
                 SELECT 
                     s.id_registro_solicitud,
                     s.id_solicitante,
@@ -58,7 +87,13 @@ async function getPendingDocuments(userId, status = 'PENDIENTE') {
                             )
                         )
                 )
-            `);
+            `;
+        }
+
+        const result = await pool.request()
+            .input('userId', sql.Int, userId)
+            .input('status', sql.VarChar, status)
+            .query(query);
             
         return result.recordset;
     } catch (error) {
