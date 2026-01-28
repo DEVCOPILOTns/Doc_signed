@@ -6,7 +6,6 @@ const { uploadFileToStorage } = require('../services/uploadFileToStorage.service
 const signatureService = require('../../pending/services/signature.service');
 
 
-
 async function getPending(req, res) {
   try {
     if (!req.user || !req.user.id_registro_usuarios) {

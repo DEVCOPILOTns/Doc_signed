@@ -5,7 +5,7 @@ const router = express.Router();
 
 
 router.get('/', masiveSignRender);
-router.post('/', createUploader(), uploadFiles);
+router.post('/:id', createUploader(), uploadFiles);
 
 
 module.exports = router;

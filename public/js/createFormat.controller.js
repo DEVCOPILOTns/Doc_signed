@@ -171,20 +171,33 @@ let etapaCounter = 0;
                 });
             }
         }
-
         //Función para inhabilitar formato
         async function disableFormat(formatId) {
             try {
                 console.log('Inhabilitando formato ID:', formatId);
+                
+                // Mostrar modal de carga
+                const loadingModal = document.getElementById('loadingModal');
+                if (loadingModal) {
+                    loadingModal.classList.add('active');
+                }
+                
                 const url = `/api/createFormat/disable/${formatId}`;
                 const response = await fetch(url, { method: 'PUT' });
                 console.log('Response status:', response.status);
                 console.log('Response statusText:', response.statusText);
+                
+                // Ocultar modal de carga inmediatamente
+                if (loadingModal) {
+                    loadingModal.classList.remove('active');
+                }
+                
                 if (!response.ok) {
                     const errorText = await response.text();
                     console.error('Response error:', errorText);
                     throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
                 }
+                
                 Swal.fire({
                     icon: 'success',
                     title: 'Éxito',
@@ -196,6 +209,12 @@ let etapaCounter = 0;
                     window.location.reload();
                 });
             } catch (error) {
+                // Ocultar modal de carga en caso de error
+                const loadingModal = document.getElementById('loadingModal');
+                if (loadingModal) {
+                    loadingModal.classList.remove('active');
+                }
+                
                 console.error('Error al inhabilitar el formato:', error);
                 Swal.fire({
                     icon: 'error',
@@ -210,15 +229,29 @@ let etapaCounter = 0;
         async function activateFormat(formatId) {
             try {
                 console.log('Activando formato ID:', formatId);
+                
+                // Mostrar modal de carga
+                const loadingModal = document.getElementById('loadingModal');
+                if (loadingModal) {
+                    loadingModal.classList.add('active');
+                }
+                
                 const url = `/api/createFormat/activate/${formatId}`;
                 const response = await fetch(url, { method: 'PUT' });
                 console.log('Response status:', response.status);
                 console.log('Response statusText:', response.statusText);
+                
+                // Ocultar modal de carga inmediatamente
+                if (loadingModal) {
+                    loadingModal.classList.remove('active');
+                }
+                
                 if (!response.ok) {
                     const errorText = await response.text();
                     console.error('Response error:', errorText);
                     throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
                 }
+                
                 Swal.fire({
                     icon: 'success',
                     title: 'Éxito',
@@ -231,6 +264,12 @@ let etapaCounter = 0;
                 });
             }
             catch (error) {
+                // Ocultar modal de carga en caso de error
+                const loadingModal = document.getElementById('loadingModal');
+                if (loadingModal) {
+                    loadingModal.classList.remove('active');
+                }
+                
                 console.error('Error al activar el formato:', error);
                 Swal.fire({
                     icon: 'error',
@@ -394,6 +433,12 @@ let etapaCounter = 0;
             console.log('Enviando formato:', formData);
             console.log('Modo edición:', isEditing);
 
+            // Mostrar modal de carga
+            const loadingModal = document.getElementById('loadingModal');
+            if (loadingModal) {
+                loadingModal.classList.add('active');
+            }
+
             //aqui hago el fetch para enviar los datos al servidor
             const url = isEditing ? `/api/createFormat/${formatId}` : '/api/createFormat';
             const method = isEditing ? 'PUT' : 'POST'; //aqui defino el metodo segun si es edicion o creacion
@@ -419,6 +464,11 @@ let etapaCounter = 0;
                 return response.text();
             })
             .then(data => {
+                // Ocultar modal de carga inmediatamente
+                if (loadingModal) {
+                    loadingModal.classList.remove('active');
+                }
+                
                 const titulo = isEditing ? 'Actualizado' : 'Creado';
                 const mensaje = isEditing ? 'Formato actualizado exitosamente' : 'Formato creado exitosamente';
                 
@@ -435,6 +485,11 @@ let etapaCounter = 0;
                 });
             })
             .catch(error => {
+                // Ocultar modal de carga en caso de error
+                if (loadingModal) {
+                    loadingModal.classList.remove('active');
+                }
+                
                 console.error('Error al enviar formato:', error);
                 Swal.fire({
                     icon: 'error',

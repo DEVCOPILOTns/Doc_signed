@@ -25,6 +25,7 @@
     "mssql": "^11.0.1",
     "multer": "^2.0.2",
     "node-tesseract-ocr": "^2.2.1",
+    "nodemailer": "^7.0.13",
     "nodemon": "^3.1.10",
     "passport": "^0.7.0",
     "passport-ldapauth": "^3.0.1",

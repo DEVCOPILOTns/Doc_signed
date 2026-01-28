@@ -14,80 +14,180 @@
 <body>
 
    <%- include('../../components/nav.ejs') %>
-<br>
-  <div class="hero">
+
+
+    <!-- Hero Section -->
+ 
+    <!-- Main Content -->
+    <div class="content-wrapper">
+        <br>
+        <div class="hero-background">
+            <div class="hero-blob hero-blob-1"></div>
+            <div class="hero-blob hero-blob-2"></div>
+        </div>
         <div class="hero-content">
-            <div class="decorative-line"></div>
-            <h1 class="section-title">Elige el Tipo de Firma</h1>
-            <p class="section-subtitle">
-                Selecciona el método de firma que mejor se adapta tus necesidades. 
-                Ambas opciones están diseñadas para diferentes casos de uso.
-            </p>
+            <div class="hero-header">
+                <div class="hero-badge">✨ Firma Digital</div>
+                <h1 class="hero-title">Bienvenido a <span class="title-highlight">DocSigned</span></h1>
+                <p class="hero-subtitle">Firma tus documentos de forma segura, rápida y confiable</p>
+            </div>
+        </div>
+
+<hr>
+<br>
+        <div class="section-header">
+            <div class="section-badge">Selecciona tu método de firma</div>
+            <h2 class="section-title">¿Cómo deseas firmar?</h2>
+            <p class="section-description">Elige la opción que mejor se adapta a tu flujo de trabajo</p>
+        </div>
+
+        <div class="cards-grid">
+            <!-- Card: Firma Masiva -->
+            <a href="/api/masivesign/" class="card-link-wrapper">
+                <div class="feature-card bulk-sign-card">
+                    <div class="card-header">
+                        <div class="icon-wrapper">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M15 2a2 2 0 0 1 1.414.586l4 4A2 2 0 0 1 21 8v7a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
+                                <path d="M15 2v4a2 2 0 0 0 2 2h4"/>
+                                <path d="M5 7a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h8a2 2 0 0 0 1.732-1"/>
+                            </svg>
+                        </div>
+                        <h3 class="card-title">Firma Masiva</h3>
+                    </div>
+                    
+                    <p class="card-description">
+                        Firma múltiples documentos de forma automática con tu imagen pregrabada
+                    </p>
+                    
+                    <ul class="features-list">
+                        <li>
+                            <span class="check-icon">✓</span>
+                            <span>Procesamiento masivo rápido</span>
+                        </li>
+                        <li>
+                            <span class="check-icon">✓</span>
+                            <span>Imagen pregrabada de firma</span>
+                        </li>
+                        <li>
+                            <span class="check-icon">✓</span>
+                            <span>Respuesta inmediata</span>
+                        </li>
+                        <li>
+                            <span class="check-icon">✓</span>
+                            <span>Ideal para documentación rutinaria</span>
+                        </li>
+                    </ul>
+                    
+                    <div class="card-footer">
+                        <span class="cta-text">Ir a Firma Masiva</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Card: Firma Individual (Coming Soon) -->
+            <div class="card-link-wrapper disabled-card">
+                <div class="feature-card individual-sign-card disabled">
+                    <div class="coming-soon-label">Próximamente</div>
+                    <div class="card-header">
+                        <div class="icon-wrapper">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/>
+                                <path d="M14 2v4a2 2 0 0 0 2 2h4"/>
+                            </svg>
+                        </div>
+                        <h3 class="card-title">Firma Individual</h3>
+                    </div>
+                    
+                    <p class="card-description">
+                        Firma documentos uno por uno con integración profesional
+                    </p>
+                    
+                    <ul class="features-list">
+                        <li>
+                            <span class="check-icon">✓</span>
+                            <span>Integración con Adobe Sign</span>
+                        </li>
+                        <li>
+                            <span class="check-icon">✓</span>
+                            <span>Cumplimiento normativo total</span>
+                        </li>
+                        <li>
+                            <span class="check-icon">✓</span>
+                            <span>Auditoría y trazabilidad completa</span>
+                        </li>
+                        <li>
+                            <span class="check-icon">✓</span>
+                            <span>Firma documento por documento</span>
+                        </li>
+                    </ul>
+                    
+                    <div class="card-footer">
+                        <span class="cta-text">Próximamente disponible</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="main-container">
-        <a href="/api/masivesign/" class="card-link">
-            <div class="card-container bulk-sign">
-                <div class="icon-circle">
-                    <svg class="icon-sign" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M15 2a2 2 0 0 1 1.414.586l4 4A2 2 0 0 1 21 8v7a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
-                        <path d="M15 2v4a2 2 0 0 0 2 2h4"/>
-                        <path d="M5 7a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h8a2 2 0 0 0 1.732-1"/>
-                    </svg>
-                </div>
-                <p class="card-title">Firma Masiva</p>
-                <div class="features-overlay">
-                    <ul class="card-features">
-                        <li>Firma automática con imagen pregrabada</li>
-                        <li>Procesamiento masivo de documentos</li>
-                        <li>Ideal para documentación rutinaria</li>
-                        <li>Respuesta inmediata</li>
-                    </ul>
-                </div>
-            </div>
-        </a>
-         
-        <div class="card-link disabled">
-            <div class="coming-soon-badge">Próximamente</div>
-            <div class="card-container individual-sign disabled">
-                <div class="icon-circle">
-                    <svg class="icon-sign" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/>
-                        <path d="M14 2v4a2 2 0 0 0 2 2h4"/>
-                    </svg>
-                </div>
-                <p class="card-title">Firma Individual</p>
-                <div class="features-overlay">
-                    <ul class="card-features">
-                        <li>Firma documento por documento</li>
-                        <li>Integración con Adobe Sign</li>
-                        <li>Cumplimiento normativo total</li>
-                        <li>Auditoría y trazabilidad completa</li>
-                    </ul>
-                </div>
-            </div>
+    <!-- Features Overview -->
+    <section class="features-overview">
+        <div class="overview-header">
+            <h2 class="section-title">¿Por qué elegir DocSigned?</h2>
         </div>
-    </div>
-
-    <!-- Coming Soon Features -->
-    <div class="coming-soon">
-        <h3 class="coming-soon-title">🚀 Próximas Funcionalidades</h3>
-        <p class="coming-soon-text">
-            Estamos trabajando en nuevas características para mejorar tu experiencia de firma digital
-        </p>
         
-        <div class="feature-preview">
-            <div class="preview-item">
-                <strong>Modulo de Firma Individual</strong>
-                <span>Integración con Adobe Sign</span>
+        <div class="features-grid">
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        <path d="m9 12 2 2 4-4"/>
+                    </svg>
+                </div>
+                <h4>Seguridad Garantizada</h4>
+                <p>Protección de datos con los más altos estándares de seguridad digital</p>
             </div>
-            <div class="preview-item">
-                <strong>Modulo crear Formatos</strong>
-                <span>Parametrización de Formatos</span>
+            
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="1"/>
+                        <path d="M12 1v6m0 6v6"/>
+                        <path d="M4.22 4.22l4.24 4.24m5.08 5.08l4.24 4.24"/>
+                        <path d="M1 12h6m6 0h6"/>
+                        <path d="M4.22 19.78l4.24-4.24m5.08-5.08l4.24-4.24"/>
+                    </svg>
+                </div>
+                <h4>Rápido y Eficiente</h4>
+                <p>Procesa documentos en segundos con nuestra tecnología optimizada</p>
+            </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                        <polyline points="13 2 13 9 20 9"/>
+                    </svg>
+                </div>
+                <h4>Trazabilidad Completa</h4>
+                <p>Registro auditado de todas las firmas y operaciones realizadas</p>
+            </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                </div>
+                <h4>Soporte</h4>
+                <p>Equipo de soporte disponible para resolver tus dudas en cualquier momento</p>
             </div>
         </div>
-    </div>
+    </section>
+
     <%- include('../../components/footer.ejs') %>
 
 </body>

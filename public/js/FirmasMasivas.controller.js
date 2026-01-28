@@ -3,15 +3,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // ================== Estado general ==================
   const totalSteps = 3;
   let currentStep = 1;
+  let selectedFormat = null; // 👈 Agregar declaración
 
   // Firma y documentos
   let uploadedFiles = [];             // File[]
-
-  // ================== Coordenadas por formato ==================
-  const COORDS = {
-    'GCLPFO-002': { pageIndex: 0, x: 120, y: 140, width: 160 }, // A38
-    'GCLPFO-004': { pageIndex: 0, x: 120, y: 520, width: 160 }
-  };
 
   // ================== Referencias DOM ==================
   const uploadArea = document.querySelector('.upload-area');
@@ -20,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const fileList = document.getElementById('fileList');
   const documentSummary = document.getElementById('documentSummary');
   const progressLine = document.getElementById('progressLine');
+  const loadingModal = document.getElementById('loadingModal');
 
   const steps = Array.from(document.querySelectorAll('.step'));
   const stepContents = Array.from(document.querySelectorAll('.step-content'));
@@ -155,6 +151,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   formatSelect?.addEventListener('change', () => {
     selectedFormat = formatSelect.value || null;
+    console.log('✅ Formato seleccionado:', selectedFormat);
+    console.log('📋 Detalles del formato:', {
+      valor: formatSelect.value,
+      texto: formatSelect.options[formatSelect.selectedIndex]?.text,
+      esValido: !!formatSelect.value
+    });
   });
 
   // ================== Navegación ==================
@@ -193,6 +195,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (currentStep === totalSteps) {
+      if (!formatSelect.value) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Formato requerido',
+          text: 'Por favor, selecciona un formato antes de continuar.',
+          confirmButtonColor: '#3085d6'
+        });
+        return;
+      }
+
       const formData = new FormData();
       formData.append('formato', formatSelect.value);
 
@@ -202,13 +214,30 @@ document.addEventListener('DOMContentLoaded', () => {
       uploadedFiles.forEach((file) => {
         formData.append('files', file);
       });
-
-      fetch('/api/masiveSign/', {
+      
+      console.log('\n📨 ===== ENVIANDO SOLICITUD ===== 📨');
+      console.log('─'.repeat(50));
+      console.log('📋 Formato seleccionado:', formatSelect.value);
+      console.log('📄 Documentos a enviar:', uploadedFiles.length);
+      console.log('💬 Comentarios:', commentsInput ? commentsInput.value : 'Sin comentarios');
+      console.log('─'.repeat(50) + '\n');
+      
+      // Mostrar modal de carga
+      if (loadingModal) {
+        loadingModal.classList.add('active');
+      }
+      
+      fetch(`/api/masiveSign/${formatSelect.value}`, {
         method: 'POST',
         body: formData
       })
         .then(response => response.json())
         .then(data => {
+          // Ocultar modal de carga
+          if (loadingModal) {
+            loadingModal.classList.remove('active');
+          }
+          
           if (data.error) {
             Swal.fire({
               icon: 'error',
@@ -218,17 +247,60 @@ document.addEventListener('DOMContentLoaded', () => {
             });
           } else {
             console.log('Archivos subidos exitosamente');
-            Swal.fire({
-              icon: 'success',
-              title: 'Éxito',
-              text: 'Los archivos se subieron correctamente.',
-              confirmButtonColor: '#28a745'
-            }).then(() => {
-              goToStep(3);
-            });
+            
+            // Verificar si hay errores en el envío de correos
+            if (data.emailsInfo && data.emailsInfo.tieneErrores) {
+              const emailInfo = data.emailsInfo;
+              const errorDetails = emailInfo.errores.map(e => `• ${e.firmante}: ${e.error}`).join('\n');
+              
+              Swal.fire({
+                icon: 'warning',
+                title: 'Advertencia: Error en envío de correos',
+                html: `<div style="text-align: left;">
+                  <p><strong>Los archivos se cargaron correctamente, pero hubo problemas al enviar los correos de notificación:</strong></p>
+                  <p><strong>Correos enviados:</strong> ${emailInfo.enviados}/${emailInfo.total}</p>
+                  <p><strong>Errores:</strong></p>
+                  <pre style="background: #f5f5f5; padding: 10px; border-radius: 6px; text-align: left; font-size: 12px;">
+${errorDetails}
+                  </pre>
+                  <p style="color: #666; font-size: 12px;">Por favor, contacta al administrador si el problema persiste.</p>
+                </div>`,
+                confirmButtonColor: '#ff9800'
+              }).then(() => {
+                goToStep(3);
+              });
+            } else if (data.emailsInfo && data.emailsInfo.enviados > 0) {
+              // Todos los correos se enviaron exitosamente
+              Swal.fire({
+                icon: 'success',
+                title: '¡Éxito!',
+                html: `<div style="text-align: center;">
+                  <p><strong>Los archivos se subieron correctamente</strong></p>
+                  <p>Se enviaron <strong>${data.emailsInfo.enviados} correos</strong> de notificación a los firmantes.</p>
+                </div>`,
+                confirmButtonColor: '#28a745'
+              }).then(() => {
+                goToStep(3);
+              });
+            } else {
+              // Sin información de emails
+              Swal.fire({
+                icon: 'success',
+                title: 'Éxito',
+                text: 'Los archivos se subieron correctamente.',
+                confirmButtonColor: '#28a745'
+              }).then(() => {
+                goToStep(3);
+              });
+            }
           }
         })
         .catch(error => {
+          // Ocultar modal de carga en caso de error
+          if (loadingModal) {
+            loadingModal.classList.remove('active');
+          }
+          
           console.error('Error:', error);
           Swal.fire({
             icon: 'error',

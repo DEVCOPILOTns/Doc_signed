@@ -316,6 +316,12 @@ function signAllDocuments() {
     console.log('Enviando solicitud de firma para ID:', selectedDocumentId);
     console.log('Formato enviado:', selectedFormatName);
 
+    // Mostrar modal de carga
+    const loadingModal = document.getElementById('loadingModal');
+    if (loadingModal) {
+        loadingModal.classList.add('active');
+    }
+
     fetch(`/api/pending/${selectedDocumentId}`, {
         method: 'POST',
         headers: {
@@ -326,6 +332,11 @@ function signAllDocuments() {
     
     .then(response => response.json())
     .then(data => {
+        // Ocultar modal de carga
+        if (loadingModal) {
+            loadingModal.classList.remove('active');
+        }
+
         if (data.message==='Proceso de firma completado') {
             Swal.fire({
                 icon: 'success',
@@ -348,6 +359,11 @@ function signAllDocuments() {
         }
     })
     .catch(error => {
+        // Ocultar modal de carga en caso de error
+        if (loadingModal) {
+            loadingModal.classList.remove('active');
+        }
+
         console.error('Error:', error);
         alert('Error al procesar la firma de documentos');
     });
@@ -418,6 +434,12 @@ function rejectApplication() {
             // Proceder con el rechazo
             const motivo = result.value;
             
+            // Mostrar modal de carga
+            const loadingModal = document.getElementById('loadingModal');
+            if (loadingModal) {
+                loadingModal.classList.add('active');
+            }
+            
             fetch(`/api/pending/${selectedDocumentId}/rechazar`, {
                 method: 'POST',
                 headers: {
@@ -428,6 +450,11 @@ function rejectApplication() {
                 })
             })
             .then(response => {
+                // Ocultar modal de carga
+                if (loadingModal) {
+                    loadingModal.classList.remove('active');
+                }
+
                 if (response.ok) {
                     Swal.fire({
                         icon: 'success',
@@ -443,6 +470,11 @@ function rejectApplication() {
                 }   
             })
             .catch(error => {
+                // Ocultar modal de carga en caso de error
+                if (loadingModal) {
+                    loadingModal.classList.remove('active');
+                }
+
                 console.error('Error:', error);
                 Swal.fire({
                     icon: 'error',
