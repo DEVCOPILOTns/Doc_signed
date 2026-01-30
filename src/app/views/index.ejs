@@ -43,7 +43,7 @@
 
         <div class="cards-grid">
             <!-- Card: Firma Masiva -->
-            <a href="/api/masivesign/" class="card-link-wrapper">
+            <a href="/api/masivesign/" class="card-link-wrapper" id="masiveSignLink" onclick="return navigateWithLoading(event, '/api/masivesign/')">
                 <div class="feature-card bulk-sign-card">
                     <div class="card-header">
                         <div class="icon-wrapper">
@@ -189,6 +189,41 @@
     </section>
 
     <%- include('../../components/footer.ejs') %>
+
+    <!-- Modal de Carga para Navegación -->
+    <div id="navigationLoadingModal" class="loading-modal" style="display: none;">
+        <div class="loading-content">
+            <div class="logo-container">
+                <img src="/images/logo_docsigned.png" alt="DocSigned" class="loading-logo">
+            </div>
+            <h2>Cargando módulo...</h2>
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+            </div>
+            <p>Por favor espera mientras se carga el módulo de firma</p>
+        </div>
+    </div>
+
+    <script>
+        function navigateWithLoading(event, url) {
+            event.preventDefault();
+            
+            const modal = document.getElementById('navigationLoadingModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                
+                // Navega después de 500ms para que el usuario vea el modal
+                setTimeout(() => {
+                    window.location.href = url;
+                }, 500);
+            } else {
+                // Si no hay modal, navega directamente
+                window.location.href = url;
+            }
+            
+            return false;
+        }
+    </script>
 
 </body>
 </html>

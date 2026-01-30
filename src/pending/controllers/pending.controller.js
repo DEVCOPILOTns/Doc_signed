@@ -4,7 +4,7 @@ const {getDetallesDocuments, getPendingDocuments, gestStage, getapplication, cou
 const { getFormatById } = require('../../createFormat/models/createFormat.model');
 const { uploadFileToStorage } = require('../services/uploadFileToStorage.service');
 const signatureService = require('../../pending/services/signature.service');
-
+const {sendMail} = require('../../masiveSign/services/mail.service');
 
 async function getPending(req, res) {
   try {
@@ -136,15 +136,15 @@ async function signAllDocuments(req, res) {
 
 
             const application = await getapplication(userInfo.selectedDocumentId);
-                console.log('info', application);
+                //console.log('info', application);
             const stageResult = await gestStage(userInfo.id, application.id_formato);
-                console.log('gestStage', stageResult);
+                //console.log('gestStage', stageResult);
             const formatInfo = await getFormatById(application.id_formato);
-                console.log('formatInfo', formatInfo);
+                //console.log('formatInfo', formatInfo);
             await createStageSigned(stageResult[0].id_registro_etapa, application.id_formato, application.id_registro_solicitud, stageResult[0].id_firmante, 'FIRMADO');
             const stagesSigned = await getStagesSignedByapplication(userInfo.selectedDocumentId, application.id_formato);
-                console.log('los stages firmados', stagesSigned.length, 
-                            'la cantidad de firmantes del formato', formatInfo.cantidad_firmantes);
+                //console.log('los stages firmados', stagesSigned.length, 
+                            //'la cantidad de firmantes del formato', formatInfo.cantidad_firmantes);
             
             // Calcular siguiente etapa (después de firmar) - no exceder cantidad_firmantes
             const proximaEtapa = Math.min(stagesSigned.length + 1, formatInfo.cantidad_firmantes);
@@ -252,6 +252,29 @@ async function signAllDocuments(req, res) {
                     });
                 }
             }
+             //aqui irá la funcion para el envio de emails
+                const solicitudInfo = await getapplication(userInfo.selectedDocumentId);
+                console.log('variables', formatInfo);
+//AQUI ESTA EL ERROR
+                let ordenActual = application.etapa_actual;
+                if (ordenActual !== formatInfo.cantidad_firmantes) {
+                    const userFirmante = await getUserInfo(stageResult[ordenActual].id_firmante);
+                    const emailFirmante = `${userFirmante.nombre_usuario.trim()}@newstetic.com`.toLowerCase();
+
+                    console.log(`   👤 Siguiente Firmante: ${userFirmante.nombre_completo}`);
+                    console.log(`   📧 Email: ${emailFirmante}`)
+                    await sendMail({
+                        to: emailFirmante,
+                        type: 'signer',
+                        subject: `DocSigned: Nueva solicitud de firma - ${formatInfo.nombre_formato}`,
+                        text: `Hola ${userFirmante.nombre_completo},\n\nTienes una nueva solicitud de firma pendiente.\n\nDetalles:\n- Solicitante: ${docPublicUrl.nombre_completo}\n- Formato: ${formatInfo.nombre_formato}\n\nPor favor, ingresa al sistema para revisar y firmar los documentos asignados.\n\nEste es un correo automático. Por favor no respondas directamente a este mensaje.\nSi tienes dudas, contacta al administrador del sistema.`
+                      });
+                    console.log(`   ✅ Correo enviado al siguiente firmante`);
+                } else {
+                    console.log('No hay más firmantes pendientes.');
+                }
+                
+                
     
             // Actualizar estado si todo fue exitoso
             if (resultados.every(r => r.firmado)) {
@@ -259,8 +282,8 @@ async function signAllDocuments(req, res) {
                 if (stagesSigned.length === formatInfo.cantidad_firmantes) {
                     console.log('Todos los stages firmados');
                     await changeStateApplication(userInfo.selectedDocumentId, 'FIRMADO', null);
+
                 }
-                
             } 
 
             return res.status(200).json({

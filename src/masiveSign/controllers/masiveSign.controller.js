@@ -1,5 +1,6 @@
 const { saveSolicitud, saveDetalles, getSignerUsers, getFormats } = require('../models/request.model');
 const { getPendingDocuments } = require('../../pending/models/pending.model');
+const {getapplication} = require('../../pending/models/pending.model');
 const {getFormatById} = require('../../createFormat/models/createFormat.model');
 const { sendMail } = require('../services/mail.service');
 const {getUserById} = require('../../users/models/users.model');
@@ -40,70 +41,115 @@ async function uploadFiles(req, res) {
 
     const tipo_solicitud = 'masiva'
     const idSolicitud = await saveSolicitud(req.user.id_registro_usuarios, req.body.formato, tipo_solicitud, req.body.comments || '');
+    const application = await getapplication(idSolicitud);
     const userStages = await getFormatById(req.body.formato);
+    const solicitanteInfo = await getUserById(req.user.id_registro_usuarios);
     
     console.log('\n📧 ===== ENVIANDO NOTIFICACIONES A FIRMANTES ===== 📧');
     console.log('─'.repeat(60));
     console.log(`Total de firmantes: ${userStages.etapas.length}`);
     console.log(`ID de solicitud: ${idSolicitud}`);
     console.log(`Formato: ${req.body.formato}`);
+    console.log(`Solicitante: ${solicitanteInfo.nombre_completo}`);
     console.log('─'.repeat(60));
 
     let emailsEnviados = 0;
     let emailsErrores = [];
+    let idSolicitante = req.user.id_registro_usuarios;
+    let idFirmantePrimeraEtapa = userStages.etapas[0].id_firmante;
+    
+    // Obtener email del solicitante para comparar después
+    const emailSolicitante = `${solicitanteInfo.nombre_usuario.trim()}@newstetic.com`.toLowerCase();
 
-    for (let index = 0; index < userStages.etapas.length; index++) {
-      try {
-        console.log(`\n📨 Procesando firmante ${index + 1}/${userStages.etapas.length}...`);
+    
+    try {
+        console.log('\n📨 Procesando primer firmante');
+        const userFirmante = await getUserById(idFirmantePrimeraEtapa);
         
-        const user = await getUserById(userStages.etapas[index].id_firmante);
-        
-        if (!user) {
-          console.warn(`⚠️  Firmante ${index + 1}: Usuario no encontrado`);
+        if (!userFirmante) {
+          console.warn(`Firmante no encontrado`);
           emailsErrores.push({
-            firmante: `Firmante ${index + 1}`,
+            firmante: `Firmante`,
             error: 'Usuario no encontrado en la base de datos'
           });
-          continue;
+          throw new Error('Firmante no encontrado');
         }
 
-        if (!user.nombre_usuario || typeof user.nombre_usuario !== 'string' || !user.nombre_usuario.trim()) {
-          console.warn(`⚠️  Firmante ${index + 1}: No tiene nombre de usuario válido`);
+        if (!userFirmante.nombre_usuario || typeof userFirmante.nombre_usuario !== 'string' || !userFirmante.nombre_usuario.trim()) {
+          console.warn(`El Firmante No tiene nombre de usuario válido`);
           emailsErrores.push({
-            firmante: `${user.nombre_completo || 'Desconocido'} (ID: ${user.id_registro_usuarios})`,
+            firmante: `${userFirmante.nombre_completo || 'Desconocido'} (ID: ${userFirmante.id_registro_usuarios})`,
             error: 'Nombre de usuario no definido o vacío'
           });
-          continue;
+          throw new Error('Nombre de usuario no válido');
         }
 
-        const emailDestino = `${user.nombre_usuario.trim()}@newstetic.com`.toLowerCase();
+        const emailFirmante = `${userFirmante.nombre_usuario.trim()}@newstetic.com`.toLowerCase();
 
-        console.log(`   👤 Firmante: ${user.nombre_completo}`);
-        console.log(`   📧 Email: ${emailDestino}`);
+        console.log(`   👤 Primer Firmante: ${userFirmante.nombre_completo}`);
+        console.log(`   📧 Email: ${emailFirmante}`);
 
-        await sendMail({
-          to: emailDestino,
-          subject: `DocSigned: Nueva solicitud de firma - ${req.body.formato}`,
-          text: `Hola ${user.nombre_completo},\n\nSe ha creado una nueva solicitud de firma masiva.\n\nDetalles:\n- Solicitante: ${req.user.cn || req.user.nombre_usuario}\n- Formato: ${req.body.formato}\n- Comentarios: ${req.body.comments || 'Sin comentarios'}\n\nPor favor, ingresa al sistema para revisar y firmar los documentos asignados.\n\nEste es un correo automático. Por favor no respondas directamente a este mensaje.\nSi tienes dudas, contacta al administrador del sistema.`
-        });
+        // Enviar correo SOLO si no es el solicitante (para evitar duplicados)
+        if (emailFirmante !== emailSolicitante) {
+          await sendMail({
+            to: emailFirmante,
+            type: 'signer',
+            subject: `DocSigned: Nueva solicitud de firma - ${req.body.formato}`,
+            text: `Hola ${userFirmante.nombre_completo},\n\nSe ha creado una nueva solicitud de firma masiva.\n\nDetalles:\n- Solicitante: ${solicitanteInfo.nombre_completo}\n- Formato: ${req.body.formato}\n- Comentarios: ${req.body.comments || 'Sin comentarios'}\n\nPor favor, ingresa al sistema para revisar y firmar los documentos asignados.\n\nEste es un correo automático. Por favor no respondas directamente a este mensaje.\nSi tienes dudas, contacta al administrador del sistema.`
+          });
 
-        console.log(`   ✅ Correo enviado correctamente`);
-        emailsEnviados++;
-      } catch (error) {
-        console.error(`   ❌ Error al procesar firmante ${index + 1}:`, error.message);
+          console.log(`   ✅ Correo enviado al firmante`);
+          emailsEnviados++;
+        } else {
+          console.log(`   ℹ️  El primer firmante es el solicitante. Se enviará correo combinado.`);
+        }
+    } catch (error) {
+        console.error(`   ❌ Error al procesar primer firmante:`, error.message);
         emailsErrores.push({
-          firmante: `Firmante ${index + 1}`,
+          firmante: `Primer Firmante`,
           error: error.message
         });
-      }
     }
     
     console.log('─'.repeat(60));
-    console.log(`Proceso completado: ${emailsEnviados} correos enviados, ${emailsErrores.length} errores`);
+    console.log(`Correos a firmantes: ${emailsEnviados} enviados, ${emailsErrores.length} errores`);
     console.log('─'.repeat(60) + '\n');
  
+    // ==================== ENVIAR CORREO AL SOLICITANTE ====================
+    console.log('\n📧 ===== ENVIANDO CONFIRMACIÓN AL SOLICITANTE ===== 📧');
+    console.log('─'.repeat(60));
+    
+    try {
+      const fechaCreacion = new Date().toLocaleDateString('es-ES', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
 
+      console.log(`   📨 Enviando confirmación a: ${emailSolicitante}`);
 
+      await sendMail({
+        to: emailSolicitante,
+        type: 'requester',
+        subject: 'DocSigned: Solicitud de Firma Creada Exitosamente',
+        variables: {
+          solicitudId: idSolicitud,
+          formatoNombre: req.body.formato,
+          totalDocumentos: processedFiles.length,
+          totalFirmantes: userStages.etapas.length,
+          fechaCreacion: fechaCreacion,
+          urlSolicitudes: `${req.protocol}://${req.get('host')}/api/pending`
+        }
+      });
+
+      console.log(`   ✅ Correo de confirmación enviado correctamente`);
+    } catch (errorSolicitante) {
+      console.error(`   ❌ Error al enviar correo al solicitante:`, errorSolicitante.message);
+    }
+
+    console.log('─'.repeat(60) + '\n');
 
     for (let index = 0; index < processedFiles.length; index++) {
       await saveDetalles(idSolicitud, processedFiles[index].url, req.body.formato);

@@ -283,7 +283,7 @@ function closeCommentModal() {
 // fuera de document.addEventListener(...)
 function signAllDocuments() {
     console.log('Intentando firmar documentos. ID seleccionado:', selectedDocumentId);
-    
+
     if (!selectedDocumentId) {
         alert('Por favor, seleccione una solicitud para firmar');
         return;

@@ -173,6 +173,22 @@
     <script src="/js/FirmasMasivas.controller.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <script>
+        // Mostrar modal de carga al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            const loadingModal = document.getElementById('loadingModal');
+            if (loadingModal) {
+                // Mostrar el modal
+                loadingModal.style.display = 'flex';
+                
+                // Ocultar el modal después de 1.5 segundos
+                setTimeout(() => {
+                    loadingModal.style.display = 'none';
+                }, 1500);
+            }
+        });
+    </script>
+
     <%- include('../../components/footer.ejs') %>
 
 </body>

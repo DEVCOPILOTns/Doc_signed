@@ -165,7 +165,38 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal de Carga para Firma Individual -->
+    <div id="loadingModal" class="loading-modal" style="display: none;">
+        <div class="loading-content">
+            <div class="logo-container">
+                <img src="/images/logo_docsigned.png" alt="DocSigned" class="loading-logo">
+            </div>
+            <h2>Procesando tu firma...</h2>
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+            </div>
+            <p>Por favor espera mientras se procesa y se guarda tu firma digital</p>
+        </div>
+    </div>
+
     <script src="./js/Firmas.controller.js"></script>
+    <script>
+        // Mostrar modal de carga al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            const loadingModal = document.getElementById('loadingModal');
+            if (loadingModal) {
+                // Mostrar el modal
+                loadingModal.style.display = 'flex';
+                
+                // Ocultar el modal después de 1.5 segundos
+                setTimeout(() => {
+                    loadingModal.style.display = 'none';
+                }, 1500);
+            }
+        });
+    </script>
     <%- include('../../components/footer.ejs') %>
 </body>
 </html>
+
