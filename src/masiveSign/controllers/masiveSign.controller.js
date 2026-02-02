@@ -48,7 +48,7 @@ async function uploadFiles(req, res) {
     console.log('\n📧 ===== ENVIANDO NOTIFICACIONES A FIRMANTES ===== 📧');
     console.log('─'.repeat(60));
     console.log(`Total de firmantes: ${userStages.etapas.length}`);
-    console.log(`ID de solicitud: ${idSolicitud}`);
+    console.log(`ID de solicitud: ${idSolicitud} (tipo: ${typeof idSolicitud})`);
     console.log(`Formato: ${req.body.formato}`);
     console.log(`Solicitante: ${solicitanteInfo.nombre_completo}`);
     console.log('─'.repeat(60));
@@ -91,10 +91,14 @@ async function uploadFiles(req, res) {
 
         // Enviar correo SOLO si no es el solicitante (para evitar duplicados)
         if (emailFirmante !== emailSolicitante) {
+          console.log(`   📨 Enviando correo con variables:`, { solicitudId: idSolicitud });
           await sendMail({
             to: emailFirmante,
             type: 'signer',
             subject: `DocSigned: Nueva solicitud de firma - ${req.body.formato}`,
+            variables: {
+              solicitudId: idSolicitud
+            },
             text: `Hola ${userFirmante.nombre_completo},\n\nSe ha creado una nueva solicitud de firma masiva.\n\nDetalles:\n- Solicitante: ${solicitanteInfo.nombre_completo}\n- Formato: ${req.body.formato}\n- Comentarios: ${req.body.comments || 'Sin comentarios'}\n\nPor favor, ingresa al sistema para revisar y firmar los documentos asignados.\n\nEste es un correo automático. Por favor no respondas directamente a este mensaje.\nSi tienes dudas, contacta al administrador del sistema.`
           });
 

@@ -149,7 +149,7 @@ async function signAllDocuments(req, res) {
             // Calcular siguiente etapa (después de firmar) - no exceder cantidad_firmantes
             const proximaEtapa = Math.min(stagesSigned.length + 1, formatInfo.cantidad_firmantes);
             await updateApplicationActualStage(application.id_registro_solicitud, proximaEtapa);
-            
+
             // Continuar con el procesamiento de documentos...
             const documentos = await getDetallesDocuments(userInfo.selectedDocumentId, 'PENDIENTE');
             if (!documentos?.length) {
@@ -157,7 +157,7 @@ async function signAllDocuments(req, res) {
             }
 
             const resultados = [];
-        
+
             // Procesar cada documento
             for (const doc of documentos) {
                 try {
@@ -255,34 +255,81 @@ async function signAllDocuments(req, res) {
              //aqui irá la funcion para el envio de emails
                 const solicitudInfo = await getapplication(userInfo.selectedDocumentId);
                 console.log('variables', formatInfo);
-//AQUI ESTA EL ERROR
+
+
+
                 let ordenActual = application.etapa_actual;
-                if (ordenActual !== formatInfo.cantidad_firmantes) {
+            
+                if (ordenActual !== formatInfo.cantidad_firmantes) { //aqui verifico si ya es el ultimo firmante, si cumple la condicion envio al siguiente
                     const userFirmante = await getUserInfo(stageResult[ordenActual].id_firmante);
                     const emailFirmante = `${userFirmante.nombre_usuario.trim()}@newstetic.com`.toLowerCase();
 
-                    console.log(`   👤 Siguiente Firmante: ${userFirmante.nombre_completo}`);
-                    console.log(`   📧 Email: ${emailFirmante}`)
+                    console.log(`👤 Siguiente Firmante: ${userFirmante.nombre_completo}`);
+                    console.log(`📧 Email: ${emailFirmante}`)
                     await sendMail({
                         to: emailFirmante,
                         type: 'signer',
                         subject: `DocSigned: Nueva solicitud de firma - ${formatInfo.nombre_formato}`,
                         text: `Hola ${userFirmante.nombre_completo},\n\nTienes una nueva solicitud de firma pendiente.\n\nDetalles:\n- Solicitante: ${docPublicUrl.nombre_completo}\n- Formato: ${formatInfo.nombre_formato}\n\nPor favor, ingresa al sistema para revisar y firmar los documentos asignados.\n\nEste es un correo automático. Por favor no respondas directamente a este mensaje.\nSi tienes dudas, contacta al administrador del sistema.`
                       });
-                    console.log(`   ✅ Correo enviado al siguiente firmante`);
-                } else {
-                    console.log('No hay más firmantes pendientes.');
+                    console.log(`✅ Correo enviado al siguiente firmante`);
                 }
-                
-                
-    
+
             // Actualizar estado si todo fue exitoso
             if (resultados.every(r => r.firmado)) {
 
                 if (stagesSigned.length === formatInfo.cantidad_firmantes) {
-                    console.log('Todos los stages firmados');
+                    console.log('✅ Todos los stages firmados - Iniciando envío de correo de finalización');
                     await changeStateApplication(userInfo.selectedDocumentId, 'FIRMADO', null);
 
+                    // ==================== ENVIAR CORREO AL SOLICITANTE - SOLICITUD COMPLETADA ====================
+                    console.log('\n📧 ===== ENVIANDO NOTIFICACIÓN DE FINALIZACIÓN AL SOLICITANTE ===== 📧');
+                    console.log('─'.repeat(60));
+                    console.log(`ID de Solicitud: ${application.id_registro_solicitud}`);
+                    console.log(`ID de Solicitante: ${application.id_solicitante}`);
+                    
+                    try {
+                        const solicitanteInfo = await getUserInfo(application.id_solicitante);
+                        
+                        //aqui valido que exista la informacion del solicitante
+                        if (!solicitanteInfo) {
+                            throw new Error('No se encontró información del solicitante');
+                        }
+                        
+                        const emailSolicitante = `${solicitanteInfo.nombre_usuario.trim()}@newstetic.com`.toLowerCase();
+                        
+                        const fechaFinalizacion = new Date().toLocaleDateString('es-ES', { 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+
+                        console.log(`   👤 Solicitante: ${solicitanteInfo.nombre_completo}`);
+                        console.log(`   📧 Email: ${emailSolicitante}`);
+                        console.log(`   📨 Enviando correo de finalización...`);
+
+                        await sendMail({
+                            to: emailSolicitante,
+                            type: 'completion',
+                            subject: 'DocSigned: ¡Todas las Firmas Completadas!',
+                            variables: {
+                                solicitudId: application.id_registro_solicitud,
+                                formatoNombre: formatInfo.nombre_formato,
+                                totalDocumentos: resultados.length,
+                                totalFirmantes: formatInfo.cantidad_firmantes,
+                                fechaFinalizacion: fechaFinalizacion,
+                                urlSolicitudes: `${req.protocol}://${req.get('host')}/api/pending`
+                            }
+                        });
+
+                        console.log(`   ✅ Correo de finalización enviado correctamente\n`);
+                    } catch (errorEmail) {
+                        console.error(`   ❌ Error al enviar correo de finalización:`, errorEmail.message);
+                    }
+
+                    console.log('─'.repeat(60) + '\n');
                 }
             } 
 
@@ -367,4 +414,3 @@ module.exports = {
   getDetallesBySolicitud,
   rejectApplication
 };
-

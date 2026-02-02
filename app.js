@@ -14,7 +14,7 @@ const { authenticateToken } = require('./src/app/middleware/auth.middleware.js')
 const userProfileRouter = require('./src/userProfile/routes/userProfile.route.js');
 const cookieParser = require("cookie-parser");
 const creteFormatRouter = require('./src/createFormat/routes/createFormat.route.js');
-
+const moddlewareNav = require ('./src/components/nav.middleware.js')
 
 app.use(cookieParser())
 app.use(express.urlencoded({ extended: true }));
@@ -32,14 +32,14 @@ app.get('/', (req, res) => {
   res.render('auth/views/auth');
 });
 
-app.use('/api/index', authenticateToken, indexRouter); 
+app.use('/api/index', authenticateToken, moddlewareNav, indexRouter); 
 app.use('/api/auth', authRouter);  
-app.use('/api/masivesign', authenticateToken, masiveRouter);
-app.use('/api/sign', authenticateToken, singRouter);
-app.use('/api/pending', authenticateToken, pendingRouter);
-app.use('/api/userProfile', authenticateToken, userProfileRouter);
-app.use('/api/application', authenticateToken, applicationRouter);
-app.use('/api/createFormat', authenticateToken, creteFormatRouter);
+app.use('/api/masivesign', authenticateToken, moddlewareNav, masiveRouter);
+app.use('/api/sign', authenticateToken, moddlewareNav, singRouter);
+app.use('/api/pending', authenticateToken, moddlewareNav, pendingRouter);
+app.use('/api/userProfile', authenticateToken, moddlewareNav, userProfileRouter);
+app.use('/api/application', authenticateToken, moddlewareNav, applicationRouter);
+app.use('/api/createFormat', authenticateToken, moddlewareNav, creteFormatRouter);
 
 // Modificar el middleware de archivos para un mejor manejo
 const serveFileMiddleware = (req, res, next) => {
