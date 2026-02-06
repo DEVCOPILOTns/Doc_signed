@@ -144,33 +144,40 @@
                <div id="myModal" class="modal">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h2>Detalles de la Solicitud</h2>
-                        <% if (status !== 'FIRMADO') { %>
-                            <button class="btn-sign-all" id="signAllBtn" onclick='signAllDocuments()'>
-                                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M9 12l2 2 4-4"/>
-                                    <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/>
-                                </svg>
-                                Firmar Todos
-                            </button>
-                            <button class="btn-reject" id="rejectBtn" onclick='rejectApplication()'>
-                                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M18 6L6 18"/>
-                                    <path d="M6 6l12 12"/>
-                                    <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/>
-                                </svg>
-                                Rechazar Todos
-
-                            </button>
-                        <% } %>
-                        <span id="closeModalBtn" class="close">&times;</span>
+                        <div style="display: flex; align-items: center; gap: var(--space-3); flex: 1;">
+                            <svg style="width: 24px; height: 24px; opacity: 0.9;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                            </svg>
+                            <h2>Detalles de la Solicitud</h2>
+                        </div>
+                        <div style="display: flex; gap: var(--space-2); align-items: center;">
+                            <% if (status !== 'FIRMADO') { %>
+                                <button class="btn-sign-all" id="signAllBtn" onclick='signAllDocuments()' title="Firmar todos los documentos">
+                                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M9 12l2 2 4-4"/>
+                                        <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/>
+                                    </svg>
+                                    Firmar
+                                </button>
+                                <button class="btn-reject" id="rejectBtn" onclick='rejectApplication()' title="Rechazar esta solicitud">
+                                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M18 6L6 18"/>
+                                        <path d="M6 6l12 12"/>
+                                        <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/>
+                                    </svg>
+                                    Rechazar
+                                </button>
+                            <% } %>
+                        </div>
+                        <span id="closeModalBtn" class="close" title="Cerrar">&times;</span>
                     </div>
                     
                     <div class="modal-body">
                         <div class="detalles-grid">
                             <div class="detalles-info"></div>
                             <div class="pdf-preview">
-                                <iframe id="pdfViewer" width="100%" height="500px"></iframe>
+                                <iframe id="pdfViewer" width="100%" height="100%"></iframe>
                             </div>
                         </div>
                     </div>

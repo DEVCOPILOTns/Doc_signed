@@ -1,5 +1,22 @@
-let currentFilter = 'pending';
-let selectedDocumentId = null;
+// Función para extraer y limpiar el nombre del documento
+function limpiarNombreDocumento(urlONombre) {
+    if (!urlONombre) return 'Documento sin nombre';
+    
+    // Extraer solo el nombre del archivo de la URL
+    let nombre = urlONombre;
+    if (nombre.includes('/')) {
+        nombre = nombre.substring(nombre.lastIndexOf('/') + 1);
+    }
+    
+    // Decodificar caracteres especiales (%20 -> espacio, etc)
+    nombre = decodeURIComponent(nombre);
+    
+    // Quitar el timestamp que viene antes de la extensión
+    // Patrón: nombreArchivo-1770142827917.pdf -> nombreArchivo.pdf
+    nombre = nombre.replace(/-\d+(\.\w+)$/, '$1');
+    
+    return nombre;
+}
 
 function toggleFilter(filter) {
     const pendingOption = document.getElementById('pendingOption');
@@ -72,7 +89,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 console.log('Estado del switch:', estado);
                 console.log('ID Solicitud seleccionada:', selectedDocumentId);
-                
+
                 if (!idSolicitud) {
                     console.error('ID de solicitud no encontrado');
                     return;
@@ -93,32 +110,29 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (data.detalles && data.detalles.length > 0) {
                     const detallesHtml = data.detalles.map(det => {
                         // Determinar la URL y el nombre del documento según el estado
-                        const documentUrl = estado === 'FIRMADO' ? det.url_archivo : det.url_archivo;
-                        const nombreDocumento = det.nombre_original || 'Documento sin nombre';
-                        const nombreMostrado = estado === 'FIRMADO' ? 
-                            `${nombreDocumento.replace('.pdf', '')}` : 
-                            nombreDocumento;
+                        const documentUrl = det.url_archivo;
+                        // Para FIRMADO, usar url_original del documento inicial. Para PENDIENTE, usar url_archivo
+                        const nombreDocumento = limpiarNombreDocumento(det.url_original || det.url_archivo || 'Documento sin nombre');
 
                         return `
                             <div class="detalle-section">
                                 <div class="detalle-header">
-                                    <h3>${det.nombre_formato}</h3>
+                                    <h3 title="${nombreDocumento}">${nombreDocumento}</h3>
                                     <span class="fecha">
-                                        ${estado === 'FIRMADO' ? 'Fecha de firma: ' : 'Fecha de solicitud: '}
+                                        ${estado === 'FIRMADO' ? '✓' : '⏱'}
                                         ${formatearFecha(estado === 'FIRMADO' ? det.fecha_firma : det.fecha_solicitud)}
                                     </span>
                                 </div>  
-                                
+
                                 <div class="detalle-content">
-                                    <div><p><strong>ID:</strong> <span class="solicitud-id">${det.id_solicitud}</span></p></div>
-                                    <p><strong>ID detalle:</strong> ${det.estado_documento === 'FIRMADO' ? det.id_detalle_firmado : det.id_registro_detalles}</p>
-                                    <p><strong>Estado:</strong> ${det.estado_documento}</p>
+                                    <p><strong>Solicitud:</strong> <span class="solicitud-id">${det.id_solicitud}</span></p>
+                                    <p><strong>Estado:</strong> <span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8125rem; font-weight: 600; ${estado === 'FIRMADO' ? 'background: #dcfce7; color: #166534;' : 'background: #fef3c7; color: #92400e;'}">${det.estado_documento}</span></p>
                                     <div class="document-actions">
                                         <button class="btn-preview" onclick="previewPDF('${documentUrl}')">
-                                            <i class="fas fa-eye"></i> Ver documento
+                                            <i class="fas fa-eye"></i> Ver
                                         </button>
                                         <a href="${documentUrl}" target="_blank" class="btn-download">
-                                            <i class="fas fa-download"></i> Descargar PDF
+                                            <i class="fas fa-download"></i> Descargar
                                         </a>
                                     </div>
                                 </div>

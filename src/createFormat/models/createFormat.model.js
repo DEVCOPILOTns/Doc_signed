@@ -62,10 +62,18 @@ async function getFormatById(id_formato) {
 
         let formato = resultFormato.recordset[0];
 
-        // Obtener las etapas del formato
+        // Obtener las etapas del formato con los nombres de los firmantes
         let resultEtapas = await pool.request()
             .input('id_formato', sql.Int, id_formato)
-            .query('SELECT * FROM etapas_firma WHERE formato_id = @id_formato ORDER BY orden');
+            .query(`
+                SELECT 
+                    ef.*,
+                    u.nombre_completo
+                FROM etapas_firma ef
+                LEFT JOIN Usuario u ON ef.id_firmante = u.id_registro_usuarios
+                WHERE ef.formato_id = @id_formato 
+                ORDER BY ef.orden
+            `);
         
         formato.etapas = resultEtapas.recordset;
         

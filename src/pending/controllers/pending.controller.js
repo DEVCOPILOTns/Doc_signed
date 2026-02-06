@@ -1,5 +1,5 @@
 const PDFLib = require('pdf-lib');
-const {getDetallesDocuments, getPendingDocuments, gestStage, getapplication, countPendingandSigned, createStageSigned, changeStateApplication, createDocumentSigned, getUserInfo, getStagesSignedByapplication, updateApplicationActualStage, getLastSignedDocument, updateDocumentSigned
+const {getDetallesDocuments, getPendingDocuments, gestStage, getapplication, countPendingandSigned, createStageSigned, changeStateApplication, createDocumentSigned, getUserInfo, getStagesSignedByapplication, updateApplicationActualStage, getLastSignedDocument, updateDocumentSigned, getAllStagesByFormat
 } = require('../models/pending.model');
 const { getFormatById } = require('../../createFormat/models/createFormat.model');
 const { uploadFileToStorage } = require('../services/uploadFileToStorage.service');
@@ -230,7 +230,7 @@ async function signAllDocuments(req, res) {
                         console.log('Creando nuevo registro de documento firmado');
                         await createDocumentSigned(
                             publicUrl,
-                            selectedFormat, 
+                            doc.nombre_original,
                             userInfo.id,
                             doc.id_registro_detalles,
                             userInfo.selectedDocumentId
@@ -255,13 +255,15 @@ async function signAllDocuments(req, res) {
              //aqui irá la funcion para el envio de emails
                 const solicitudInfo = await getapplication(userInfo.selectedDocumentId);
                 console.log('variables', formatInfo);
+                console.log('proximaEtapa (después de actualizar):', proximaEtapa);
+                
+                // Obtener TODAS las etapas del formato para validar correctamente
+                const allStages = await getAllStagesByFormat(application.id_formato);
+                console.log('allStages.length:', allStages.length);
 
-
-
-                let ordenActual = application.etapa_actual;
-            
-                if (ordenActual !== formatInfo.cantidad_firmantes) { //aqui verifico si ya es el ultimo firmante, si cumple la condicion envio al siguiente
-                    const userFirmante = await getUserInfo(stageResult[ordenActual].id_firmante);
+                if (proximaEtapa <= formatInfo.cantidad_firmantes && proximaEtapa <= allStages.length) { 
+                    //aqui verifico si ya es el ultimo firmante, si cumple la condicion envio al siguiente
+                    const userFirmante = await getUserInfo(allStages[proximaEtapa - 1].id_firmante);
                     const emailFirmante = `${userFirmante.nombre_usuario.trim()}@newstetic.com`.toLowerCase();
 
                     console.log(`👤 Siguiente Firmante: ${userFirmante.nombre_completo}`);
@@ -270,9 +272,14 @@ async function signAllDocuments(req, res) {
                         to: emailFirmante,
                         type: 'signer',
                         subject: `DocSigned: Nueva solicitud de firma - ${formatInfo.nombre_formato}`,
+                        variables: {
+                          solicitudId: userInfo.selectedDocumentId
+                        },
                         text: `Hola ${userFirmante.nombre_completo},\n\nTienes una nueva solicitud de firma pendiente.\n\nDetalles:\n- Solicitante: ${docPublicUrl.nombre_completo}\n- Formato: ${formatInfo.nombre_formato}\n\nPor favor, ingresa al sistema para revisar y firmar los documentos asignados.\n\nEste es un correo automático. Por favor no respondas directamente a este mensaje.\nSi tienes dudas, contacta al administrador del sistema.`
                       });
                     console.log(`✅ Correo enviado al siguiente firmante`);
+                } else {
+                    console.log(`⚠️  No se puede enviar correo al siguiente firmante - Validación fallida (proximaEtapa: ${proximaEtapa}, cantidad_firmantes: ${formatInfo.cantidad_firmantes}, allStages.length: ${allStages.length})`);
                 }
 
             // Actualizar estado si todo fue exitoso
@@ -306,6 +313,13 @@ async function signAllDocuments(req, res) {
                             minute: '2-digit'
                         });
 
+                        // Obtener nombres de los firmantes desde formatInfo.etapas (todas las etapas del formato)
+                        const firmantes = [];
+                        for (let i = 0; i < formatInfo.etapas.length; i++) {
+                          const userFirmante = await getUserInfo(formatInfo.etapas[i].id_firmante);
+                          firmantes.push(`${i + 1}. ${userFirmante.nombre_usuario}`);
+                        }
+
                         console.log(`   👤 Solicitante: ${solicitanteInfo.nombre_completo}`);
                         console.log(`   📧 Email: ${emailSolicitante}`);
                         console.log(`   📨 Enviando correo de finalización...`);
@@ -318,6 +332,7 @@ async function signAllDocuments(req, res) {
                                 solicitudId: application.id_registro_solicitud,
                                 formatoNombre: formatInfo.nombre_formato,
                                 totalDocumentos: resultados.length,
+                                firmantes: firmantes.join('\n'),
                                 totalFirmantes: formatInfo.cantidad_firmantes,
                                 fechaFinalizacion: fechaFinalizacion,
                                 urlSolicitudes: `${req.protocol}://${req.get('host')}/api/pending`

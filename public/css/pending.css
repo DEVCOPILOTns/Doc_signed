@@ -341,8 +341,8 @@
     position: relative;
     background: var(--bg-card);
     width: 100%;
-    max-width: 1400px;
-    max-height: 92vh;
+    max-width: 1600px;
+    max-height: 95vh;
     border-radius: var(--radius-xl);
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
     overflow: hidden;
@@ -354,23 +354,24 @@
 /* Header del modal */
 .modal-header {
     background: linear-gradient(135deg, var(--primary-500) 0%, #007b8e 100%);
-    padding: var(--space-6) var(--space-8);
+    padding: var(--space-5) var(--space-6);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: var(--space-4);
+    gap: var(--space-3);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-wrap: wrap;
 }
 
 .modal-header h2 {
     color: white;
-    font-size: 1.5rem;
-    font-weight: 600;
+    font-size: 1.375rem;
+    font-weight: 700;
     margin: 0;
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
 }
 
 /* Botón Rechazo  mejorado */
@@ -458,6 +459,7 @@
     overflow: hidden;
     flex: 1;
     display: flex;
+    min-height: 500px;
 }
 
 
@@ -473,28 +475,31 @@
 /* Grid de detalles mejorado */
 .detalles-grid {
     display: grid;
-    grid-template-columns: 400px 1fr;
+    grid-template-columns: 420px 1fr;
     gap: 0;
-    min-height: 500px;
+    min-height: 600px;
     width: 100%;
+    height: 100%;
 }
 
 /* Panel de información */
 .detalles-info {
     overflow-y: auto;
-    padding: var(--space-8);
-    background: var(--bg-light);
+    padding: var(--space-6);
+    background: linear-gradient(135deg, var(--bg-light) 0%, #ffffff 100%);
     border-right: 1px solid var(--border);
+    max-height: 600px;
 }
 
 /* Sección de detalle individual */
 .detalle-section {
-    background: white;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
     border-radius: var(--radius-lg);
-    padding: var(--space-6);
-    margin-bottom: var(--space-6);
-    border: 1px solid var(--border);
+    padding: var(--space-5);
+    margin-bottom: var(--space-5);
+    border: 2px solid var(--border);
     transition: all var(--transition);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .detalle-section:hover {
@@ -510,27 +515,36 @@
 .detalle-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--space-5);
-    padding-bottom: var(--space-4);
+    align-items: flex-start;
+    margin-bottom: var(--space-3);
+    padding-bottom: var(--space-2);
     border-bottom: 2px solid var(--bg-light);
+    gap: var(--space-1);
 }
 
 .detalle-header h3 {
     font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--text-900);
+    font-weight: 700;
+    color: var(--primary-500);
     margin: 0;
     letter-spacing: -0.01em;
+    line-height: 1.4;
+    flex: 1;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    max-width: 100%;
 }
 
 .detalle-header .fecha {
-    font-size: 0.875rem;
-    color: var(--text-500);
+    font-size: 0.8125rem;
+    color: var(--text-600);
     font-weight: 500;
     padding: 0.375rem 0.875rem;
     background: var(--bg-light);
     border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 /* Contenido del detalle */
@@ -568,23 +582,23 @@
 }
 
 .detalle-content p {
-    margin: 0 0 var(--space-3) 0;
-    font-size: 0.9375rem;
-    line-height: 1.6;
+    margin: 0 0 var(--space-2) 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
     color: var(--text-700);
 }
 
 .detalle-content strong {
     color: var(--text-900);
-    font-weight: 600;
+    font-weight: 700;
 }
 
 /* Acciones de documento */
 .document-actions {
     display: flex;
-    gap: var(--space-3);
-    margin-top: var(--space-5);
-    padding-top: var(--space-4);
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+    padding-top: var(--space-3);
     border-top: 1px solid var(--border);
 }
 
@@ -594,10 +608,10 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: var(--space-2);
-    padding: 0.75rem 1.25rem;
+    gap: var(--space-1);
+    padding: 0.625rem 1rem;
     border-radius: var(--radius-md);
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     font-weight: 600;
     cursor: pointer;
     transition: all var(--transition);
@@ -606,15 +620,19 @@
 }
 
 .btn-preview {
-    background: var(--primary-500);
+    background: linear-gradient(135deg, var(--primary-500), #007b8e);
     color: white;
     border: none;
 }
 
 .btn-preview:hover {
-    background: #007b8e;
+    background: linear-gradient(135deg, #007b8e, #006170);
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(0, 163, 180, 0.3);
+}
+
+.btn-preview:active {
+    transform: translateY(0);
 }
 
 .btn-download {
@@ -630,14 +648,20 @@
     box-shadow: 0 6px 16px rgba(0, 163, 180, 0.2);
 }
 
+.btn-download:active {
+    transform: translateY(0);
+}
+
 /* Vista previa del PDF */
 .pdf-preview {
     position: relative;
-    background: var(--bg-dark);
+    background: linear-gradient(135deg, var(--bg-dark) 0%, #1a1f3a 100%);
     padding: var(--space-4);
     display: flex;
     align-items: center;
     justify-content: center;
+    flex: 1;
+    min-height: 400px;
 }
 
 #pdfViewer {
@@ -655,11 +679,31 @@
     text-align: center;
     padding: var(--space-12);
     color: var(--text-500);
-    font-size: 1rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+}
+
+.loading::before {
+    content: '';
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(0, 163, 180, 0.2);
+    border-top-color: var(--primary-500);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: var(--space-3);
 }
 
 .error-message {
     color: var(--danger-500);
+    background: #fef2f2;
+    border-radius: var(--radius-lg);
+    margin: var(--space-4);
 }
 
 /* Animaciones */
@@ -968,7 +1012,8 @@
 /* Responsive */
 @media (max-width: 1200px) {
     .detalles-grid {
-        grid-template-columns: 350px 1fr;
+        grid-template-columns: 380px 1fr;
+        min-height: 550px;
     }
 
     .documents-grid {
@@ -980,16 +1025,20 @@
 @media (max-width: 992px) {
     .detalles-grid {
         grid-template-columns: 1fr;
+        min-height: auto;
+        max-height: 70vh;
     }
 
     .pdf-preview {
-        height: 400px;
+        height: 350px;
         border-top: 1px solid var(--border);
+        min-height: 350px;
     }
 
     .detalles-info {
         border-right: none;
-        max-height: 400px;
+        border-bottom: 1px solid var(--border);
+        max-height: 300px;
     }
 
     .documents-grid {
@@ -1066,38 +1115,71 @@
     }
 
     .modal-header {
-        flex-direction: column;
-        padding: var(--space-5);
-        gap: var(--space-3);
+        flex-direction: row;
+        padding: var(--space-4);
+        gap: var(--space-2);
+        align-items: center;
+        flex-wrap: wrap;
     }
 
     .modal-header h2 {
-        font-size: 1.25rem;
+        font-size: 1.125rem;
+        flex: 1;
     }
 
-    .btn-sign-all {
-        width: 100%;
-        justify-content: center;
+    .btn-sign-all,
+    .btn-reject {
+        padding: 0.625rem 1rem;
+        font-size: 0.8125rem;
     }
 
     .modal-body {
         padding: 0;
+        min-height: auto;
+    }
+
+    .detalles-grid {
+        grid-template-columns: 1fr;
+        min-height: auto;
+        max-height: 65vh;
     }
 
     .detalles-info {
-        padding: var(--space-5);
+        padding: var(--space-4);
+        max-height: 250px;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
     }
 
     .detalle-section {
-        padding: var(--space-5);
+        padding: var(--space-4);
+        margin-bottom: var(--space-4);
+    }
+
+    .detalle-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .detalle-header .fecha {
+        align-self: flex-start;
+        margin-top: var(--space-2);
     }
 
     .document-actions {
-        flex-direction: column;
+        flex-direction: row;
+        gap: var(--space-2);
+    }
+
+    .btn-preview,
+    .btn-download {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.75rem;
     }
 
     .pdf-preview {
-        height: 350px;
+        height: 300px;
+        min-height: 300px;
     }
 
     .documents-grid {

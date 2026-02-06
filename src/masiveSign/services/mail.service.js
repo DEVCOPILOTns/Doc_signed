@@ -156,8 +156,9 @@ const htmlContentForRequester = `
                         <p style="margin: 0;"><strong>Número de solicitud:</strong> #{{solicitudId}}</p>
                         <p style="margin: 0;"><strong>Formato de firma:</strong> {{formatoNombre}}</p>
                         <p style="margin: 0;"><strong>Documentos cargados:</strong> {{totalDocumentos}}</p>
-                        <p style="margin: 0;"><strong>Firmantes a notificar:</strong> {{totalFirmantes}}</p>
-                        <p style="margin: 0;"><strong>Fecha de creación:</strong> {{fechaCreacion}}</p>
+                        <p style="margin: 0;"><strong>Firmantes:</strong></p>
+                        <p style="margin: 5px 0 0 20px; white-space: pre-line;"><code style="background: #f1f5f9; padding: 8px; border-radius: 4px; display: inline-block;">{{firmantes}}</code></p>
+                        <p style="margin: 10px 0 0 0;"><strong>Fecha de creación:</strong> {{fechaCreacion}}</p>
                     </div>
                 </div>
 
@@ -256,8 +257,9 @@ const htmlContentForCompletionRequester = `
                         <p style="margin: 0;"><strong>Número de solicitud:</strong> #{{solicitudId}}</p>
                         <p style="margin: 0;"><strong>Formato de firma:</strong> {{formatoNombre}}</p>
                         <p style="margin: 0;"><strong>Total de documentos:</strong> {{totalDocumentos}}</p>
-                        <p style="margin: 0;"><strong>Firmantes completados:</strong> {{totalFirmantes}}</p>
-                        <p style="margin: 0;"><strong>Fecha de finalización:</strong> {{fechaFinalizacion}}</p>
+                        <p style="margin: 0;"><strong>Firmantes:</strong></p>
+                        <p style="margin: 5px 0 0 20px; white-space: pre-line;"><code style="background: #f1f5f9; padding: 8px; border-radius: 4px; display: inline-block;">{{firmantes}}</code></p>
+                        <p style="margin: 10px 0 0 0;"><strong>Fecha de finalización:</strong> {{fechaFinalizacion}}</p>
                     </div>
                 </div>
 

@@ -1,8 +1,5 @@
 module.exports = (req, res, next) => {
-    console.log('\n' + '═'.repeat(60));
-    console.log('🔍 MIDDLEWARE DE NAVEGACIÓN ACTIVADO');
-    console.log('═'.repeat(60));
-    console.log('📍 Ruta actual:', req.path);
+
     
     // ==================== INFORMACIÓN DEL USUARIO ====================
     res.locals.user = req.user || null;
@@ -11,21 +8,6 @@ module.exports = (req, res, next) => {
     res.locals.userName = req.user?.nombre_completo || null;
     res.locals.userEmail = req.user?.nombre_usuario || null;
 
-    // LOG de información del usuario
-    if (req.user) {
-        console.log('\n👤 INFORMACIÓN DEL USUARIO:');
-        console.log('─'.repeat(60));
-        console.log('   ID:', req.user.id_registro_usuarios);
-        console.log('   Nombre Completo:', req.user.nombre_completo);
-        console.log('   Usuario:', req.user.nombre_usuario);
-        console.log('   Email:', `${req.user.nombre_usuario}@newstetic.com`);
-        console.log('   Autenticado:', true);
-        console.log('   Objeto completo del usuario:');
-        console.log('   ', JSON.stringify(req.user, null, 2));
-    } else {
-        console.log('\n⚠️  Sin usuario autenticado');
-    }
-
     // ==================== INFORMACIÓN DE NAVEGACIÓN ====================
     res.locals.currentPath = req.path;
     res.locals.currentRoute = req.baseUrl;
@@ -33,11 +15,6 @@ module.exports = (req, res, next) => {
     // Determinar sección activa
     const pathSegments = req.path.split('/').filter(Boolean);
     res.locals.activeSection = pathSegments[1] || 'home';
-    
-    console.log('\n🗺️  INFORMACIÓN DE RUTA:');
-    console.log('─'.repeat(60));
-    console.log('   Ruta base:', req.baseUrl);
-    console.log('   Sección activa:', res.locals.activeSection);
     
     // ==================== MENÚ ITEMS ====================
     res.locals.menuItems = [
@@ -73,8 +50,6 @@ module.exports = (req, res, next) => {
         }
     ];
 
-    console.log('\n📋 MENÚ ITEMS:');
-    console.log('─'.repeat(60));
     res.locals.menuItems.forEach((item, index) => {
         console.log(`   ${index + 1}. ${item.name} - ${item.path} (Activo: ${item.active})`);
     });
@@ -94,8 +69,7 @@ module.exports = (req, res, next) => {
     // ==================== BREADCRUMBS ====================
     res.locals.breadcrumbs = generateBreadcrumbs(req.path);
     
-    console.log('\n🔗 BREADCRUMBS:');
-    console.log('─'.repeat(60));
+
     res.locals.breadcrumbs.forEach((crumb, index) => {
         console.log(`   ${index + 1}. ${crumb.name} - ${crumb.path} (Activo: ${crumb.active})`);
     });
@@ -113,15 +87,6 @@ module.exports = (req, res, next) => {
     // ==================== VARIABLES DE TEMA ====================
     res.locals.theme = req.user?.preferencias_tema || 'light';
     res.locals.language = req.user?.idioma || 'es';
-
-    console.log('\n⚙️  VARIABLES DE APLICACIÓN:');
-    console.log('─'.repeat(60));
-    console.log('   App:', res.locals.appName, 'v' + res.locals.appVersion);
-    console.log('   Año actual:', res.locals.currentYear);
-    console.log('   Tema:', res.locals.theme);
-    console.log('   Idioma:', res.locals.language);
-
-    console.log('═'.repeat(60) + '\n');
 
     next();
 };

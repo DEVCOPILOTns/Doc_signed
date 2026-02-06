@@ -29,7 +29,7 @@
                 <div class="user-info">
                     <h1 class="profile-name"><%= name %></h1>
                     <p class="profile-title">
-                        <%= user %>@newstetic.com
+                        <%= user.nombre_usuario %>@newstetic.com
                         <span class="verified-badge">
                             ✓ Verificado
                         </span>
@@ -118,7 +118,7 @@
                         </div>
 
                         <label for="signatureUpload" class="upload-area">
-                            <div class="upload-icon">📤</div>
+                            <div class="upload-icon">📁</div>
                             <div class="upload-text">Arrastra tu firma aquí o haz clic para seleccionar</div>
                             <div class="upload-hint">Formatos soportados: PNG, JPG, SVG (Máx. 2MB)</div>
                             <input type="file" id="signatureUpload" name="files" accept="image/*">

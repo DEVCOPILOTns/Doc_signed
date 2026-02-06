@@ -11,11 +11,35 @@ async function uploadFileToStorage(fileBuffer, fileName, req) {
             await fs.mkdir(uploadPath, { recursive: true });
         }
 
-        // Generar nombre único para el archivo
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        // Generar nombre único para el archivo - mantener el nombre original
         const ext = path.extname(fileName);
         const baseName = path.basename(fileName, ext);
-        const uniqueFileName = `${baseName}-signed-${uniqueSuffix}${ext}`;
+        
+        // Verificar si el nombre ya tiene "-firmado" o similar, para evitar duplicados
+        let uniqueFileName = fileName;
+        
+        // Si el archivo no tiene extensión o necesita un sufijo único
+        if (!ext) {
+            uniqueFileName = `${baseName}-${Date.now()}`;
+        } else {
+            // Buscar si ya existe un archivo con ese nombre
+            let counter = 0;
+            let testFileName = fileName;
+            let filePath = path.join(uploadPath, testFileName);
+            
+            try {
+                while (await fs.access(filePath).then(() => true).catch(() => false)) {
+                    counter++;
+                    testFileName = `${baseName}-${counter}${ext}`;
+                    filePath = path.join(uploadPath, testFileName);
+                }
+                uniqueFileName = testFileName;
+            } catch (err) {
+                // Si hay error, usar el nombre original con timestamp
+                uniqueFileName = `${baseName}-${Date.now()}${ext}`;
+            }
+        }
+        
         const filePath = path.join(uploadPath, uniqueFileName);
 
         // Guardar el archivo

@@ -25,6 +25,56 @@ body {
   align-items: center;
 }
 
+/* User Register - Nombre de usuario */
+.user-register {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: linear-gradient(135deg, rgba(0, 163, 180, 0.1) 0%, rgba(227, 231, 102, 0.1) 100%);
+  border: 1.5px solid var(--primary-500);
+  border-radius: var(--radius-lg);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--primary-500);
+  white-space: nowrap;
+  transition: all var(--transition);
+  box-shadow: 0 2px 8px rgba(0, 163, 180, 0.15);
+}
+
+.user-register:hover {
+  background: linear-gradient(135deg, rgba(0, 163, 180, 0.15) 0%, rgba(227, 231, 102, 0.15) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 163, 180, 0.25);
+  border-color: var(--primary-600);
+}
+
+.user-register::before {
+  content: '';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, var(--primary-500) 0%, #00a3b4 100%);
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z'/%3E%3C/svg%3E");
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+}
+
+.user-register span {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, var(--primary-500) 0%, #00a3b4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 /* Logo */
 .logo-nav {
   display: flex;

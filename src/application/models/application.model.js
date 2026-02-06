@@ -22,10 +22,12 @@ async function getApplicationsByUser(userId) {
                 SELECT 
                     Solicitudes.*,
                     uf.nombre_completo AS nombre_firmante,
-                    us.nombre_completo AS nombre_solicitante
+                    us.nombre_completo AS nombre_solicitante,
+                    f.nombre_formato
                 FROM Solicitudes
-                LEFT JOIN Usuario uf ON Solicitudes.id_formato  = uf.id_registro_usuarios
+                LEFT JOIN Usuario uf ON Solicitudes.id_formato = uf.id_registro_usuarios
                 LEFT JOIN Usuario us ON Solicitudes.id_solicitante = us.id_registro_usuarios
+                LEFT JOIN formatos f ON Solicitudes.id_formato = f.id_registro_formato
                 WHERE Solicitudes.id_solicitante = @userId
             `);
             
@@ -81,15 +83,16 @@ async function getApplicationDocuments(applicationId) {
             .input('applicationId', paramType, applicationId)
             .query(`
                 SELECT
-                    id_detalle_firmado,
-                    id_detalle,
-                    url_archivo_firmado,
-                    id_firmante,
-                    fecha_firma,
-                    id_solicitud
-                FROM Documentos_Firmados
-                WHERE id_solicitud = @applicationId
-                ORDER BY fecha_firma DESC
+                    df.id_detalle_firmado,
+                    df.id_detalle,
+                    df.url_archivo_firmado,
+                    df.id_firmante,
+                    df.fecha_firma,
+                    df.id_solicitud,
+                    (SELECT TOP 1 url_archivos FROM Detalles_solicitudes WHERE id_solicitud = df.id_solicitud) as url_original
+                FROM Documentos_Firmados df
+                WHERE df.id_solicitud = @applicationId
+                ORDER BY df.fecha_firma DESC
             `);
 
         const rows = result.recordset || [];
@@ -97,10 +100,12 @@ async function getApplicationDocuments(applicationId) {
             id_detalle_firmado: r.id_detalle_firmado,
             id_detalle: r.id_detalle,
             url_archivo: r.url_archivo_firmado,
+            url_original: r.url_original || r.url_archivo_firmado,
             id_firmante: r.id_firmante,
             fecha_firma: r.fecha_firma,
             id_solicitud: r.id_solicitud,
-            nombre_original: (r.url_archivo_firmado || '').split('/').pop() || null
+            estado_documento: 'FIRMADO',
+            nombre_original: (r.url_original || r.url_archivo_firmado || '').split('/').pop() || null
         }));
     } catch (error) {
         console.error('Error fetching application documents:', error);

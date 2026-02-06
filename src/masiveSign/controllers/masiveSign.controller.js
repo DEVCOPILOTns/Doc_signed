@@ -89,24 +89,20 @@ async function uploadFiles(req, res) {
         console.log(`   👤 Primer Firmante: ${userFirmante.nombre_completo}`);
         console.log(`   📧 Email: ${emailFirmante}`);
 
-        // Enviar correo SOLO si no es el solicitante (para evitar duplicados)
-        if (emailFirmante !== emailSolicitante) {
-          console.log(`   📨 Enviando correo con variables:`, { solicitudId: idSolicitud });
-          await sendMail({
-            to: emailFirmante,
-            type: 'signer',
-            subject: `DocSigned: Nueva solicitud de firma - ${req.body.formato}`,
-            variables: {
-              solicitudId: idSolicitud
-            },
-            text: `Hola ${userFirmante.nombre_completo},\n\nSe ha creado una nueva solicitud de firma masiva.\n\nDetalles:\n- Solicitante: ${solicitanteInfo.nombre_completo}\n- Formato: ${req.body.formato}\n- Comentarios: ${req.body.comments || 'Sin comentarios'}\n\nPor favor, ingresa al sistema para revisar y firmar los documentos asignados.\n\nEste es un correo automático. Por favor no respondas directamente a este mensaje.\nSi tienes dudas, contacta al administrador del sistema.`
-          });
+        // Enviar correo al primer firmante siempre
+        console.log(`   📨 Enviando correo con variables:`, { solicitudId: idSolicitud });
+        await sendMail({
+          to: emailFirmante,
+          type: 'signer',
+          subject: `DocSigned: Nueva solicitud de firma - ${req.body.formato}`,
+          variables: {
+            solicitudId: idSolicitud
+          },
+          text: `Hola ${userFirmante.nombre_completo},\n\nSe ha creado una nueva solicitud de firma masiva.\n\nDetalles:\n- Solicitante: ${solicitanteInfo.nombre_completo}\n- Formato: ${req.body.formato}\n- Comentarios: ${req.body.comments || 'Sin comentarios'}\n\nPor favor, ingresa al sistema para revisar y firmar los documentos asignados.\n\nEste es un correo automático. Por favor no respondas directamente a este mensaje.\nSi tienes dudas, contacta al administrador del sistema.`
+        });
 
-          console.log(`   ✅ Correo enviado al firmante`);
-          emailsEnviados++;
-        } else {
-          console.log(`   ℹ️  El primer firmante es el solicitante. Se enviará correo combinado.`);
-        }
+        console.log(`   ✅ Correo enviado al firmante`);
+        emailsEnviados++;
     } catch (error) {
         console.error(`   ❌ Error al procesar primer firmante:`, error.message);
         emailsErrores.push({
@@ -134,6 +130,13 @@ async function uploadFiles(req, res) {
 
       console.log(`   📨 Enviando confirmación a: ${emailSolicitante}`);
 
+      // Obtener nombres de los firmantes
+      const firmantes = [];
+      for (let i = 0; i < userStages.etapas.length; i++) {
+        const userFirmante = await getUserById(userStages.etapas[i].id_firmante);
+        firmantes.push(`${i + 1}. ${userFirmante.nombre_usuario}`);
+      }
+
       await sendMail({
         to: emailSolicitante,
         type: 'requester',
@@ -142,6 +145,7 @@ async function uploadFiles(req, res) {
           solicitudId: idSolicitud,
           formatoNombre: req.body.formato,
           totalDocumentos: processedFiles.length,
+          firmantes: firmantes.join('\n'),
           totalFirmantes: userStages.etapas.length,
           fechaCreacion: fechaCreacion,
           urlSolicitudes: `${req.protocol}://${req.get('host')}/api/pending`

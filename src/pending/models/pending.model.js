@@ -115,7 +115,7 @@ async function getDetallesDocuments(idSolicitud, estado) {
                     sd.fecha_solicitud,
                     df.url_archivo_firmado as url_archivo,
                     df.fecha_firma,
-                    ds.tipo_documento as nombre_original,
+                    ds.url_archivos as url_original,
                     f.nombre_formato,
                     'FIRMADO' as estado_documento
                 FROM Documentos_Firmados df
@@ -174,10 +174,29 @@ async function gestStage(UserId, formatoId){
             .query(`    
                 SELECT * FROM etapas_firma
                 WHERE id_firmante = @UserId AND formato_id = @formatoId
+                ORDER BY orden ASC
             `);
         return result.recordset; 
     } catch (error) {
         console.error('Error al obtener las etapas de firma:', error);
+        throw error;
+    }
+}
+
+// Nueva función para obtener TODAS las etapas de un formato (sin filtro de usuario)
+async function getAllStagesByFormat(formatoId){
+    try {
+        const pool = await config.poolPromise;
+        const result = await pool.request()
+            .input('formatoId', sql.Int, formatoId)
+            .query(`    
+                SELECT * FROM etapas_firma
+                WHERE formato_id = @formatoId
+                ORDER BY orden ASC
+            `);
+        return result.recordset; 
+    } catch (error) {
+        console.error('Error al obtener las etapas del formato:', error);
         throw error;
     }
 }
@@ -396,6 +415,7 @@ module.exports = {
     createStageSigned,
     getapplication,
     gestStage,
+    getAllStagesByFormat,
     getStagesSignedByapplication,
     updateApplicationActualStage,
     getLastSignedDocument,

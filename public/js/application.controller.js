@@ -1,6 +1,46 @@
 
 let selectedDocumentId = null;
 
+// Función para manejar el toggle de la lista de firmantes
+function toggleFirmantes(button, event) {
+    // Prevenir que el click se propague hacia el document-card
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    
+    const firmantesList = button.closest('.firmantes-section').querySelector('.firmantes-list');
+    const isVisible = firmantesList.style.display !== 'none';
+    
+    if (isVisible) {
+        firmantesList.style.display = 'none';
+        button.classList.remove('active');
+    } else {
+        firmantesList.style.display = 'block';
+        button.classList.add('active');
+    }
+}
+
+// Función para extraer y limpiar el nombre del documento
+function limpiarNombreDocumento(urlONombre) {
+    if (!urlONombre) return 'Documento sin nombre';
+    
+    // Extraer solo el nombre del archivo de la URL
+    let nombre = urlONombre;
+    if (nombre.includes('/')) {
+        nombre = nombre.substring(nombre.lastIndexOf('/') + 1);
+    }
+    
+    // Decodificar caracteres especiales (%20 -> espacio, etc)
+    nombre = decodeURIComponent(nombre);
+    
+    // Quitar el timestamp que viene antes de la extensión
+    // Patrón: nombreArchivo-1770142827917.pdf -> nombreArchivo.pdf
+    nombre = nombre.replace(/-\d+(\.\w+)$/, '$1');
+    
+    return nombre;
+}
+
 // Reemplazar la función formatDate por esta nueva función formatearFecha
 function formatearFecha(fecha) {
     if (!fecha) return 'Sin fecha';
@@ -95,27 +135,28 @@ document.addEventListener('DOMContentLoaded', function () {
                     const detallesHtml = detalles.map(det => {
                         // Determinar la URL y el nombre del documento
                         const documentUrl = det.url_archivo || det.url || '';
-                        const nombreDocumento = det.nombre_original || 'Documento sin nombre';
+                        // Usar url_original si existe, si no usar url_archivo
+                        const nombreDocumento = limpiarNombreDocumento(det.url_original || det.url_archivo || det.url || det.nombre_original || 'Documento sin nombre');
 
                         return `
                             <div class="detalle-section">
                                 <div class="detalle-header">
-                                    <h3>${nombreDocumento}</h3>
+                                    <h3 title="${nombreDocumento}">${nombreDocumento}</h3>
                                     <span class="fecha">
+                                        ✓
                                         ${formatearFecha(det.fecha_firma || det.fecha_solicitud)}
                                     </span>
                                 </div>  
                                 
                                 <div class="detalle-content">
-                                    <div><p><strong>ID:</strong> <span class="solicitud-id">${det.id_solicitud || ''}</span></p></div>
-                                    <p><strong>ID detalle:</strong> ${det.id_detalle_firmado ?? det.id_registro_detalles ?? det.id_detalle ?? ''}</p>
-                                    <p><strong>Estado:</strong> ${det.estado_documento || det.estado || ''}</p>
+                                    <p><strong>Solicitud:</strong> <span class="solicitud-id">${det.id_solicitud || ''}</span></p>
+                                    <p><strong>Estado:</strong> <span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8125rem; font-weight: 600; background: #dcfce7; color: #166534;">${det.estado_documento || det.estado || ''}</span></p>
                                     <div class="document-actions">
                                         <button class="btn-preview" onclick="previewPDF('${documentUrl}')">
-                                            <i class="fas fa-eye"></i> Ver documento
+                                            <i class="fas fa-eye"></i> Ver
                                         </button>
                                         <a href="${documentUrl}" target="_blank" class="btn-download">
-                                            <i class="fas fa-download"></i> Descargar PDF
+                                            <i class="fas fa-download"></i> Descargar
                                         </a>
                                     </div>
                                 </div>
@@ -147,39 +188,10 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
         console.log('Mostrando documento:', url);
-        const wrapper = document.querySelector('.pdf-viewer-wrapper');
-        if (!wrapper) {
-            window.open(url, '_blank');
-            return;
+        const pdfViewer = document.getElementById('pdfViewer');
+        if (pdfViewer) {
+            pdfViewer.src = url;
         }
-        
-        // ocultar iframe existente si hay
-        const existingIframe = wrapper.querySelector('#pdfViewer');
-        if (existingIframe) existingIframe.style.display = 'none';
-
-        // eliminar objeto previo si existe
-        const prevObj = wrapper.querySelector('#pdfObject');
-        if (prevObj) prevObj.remove();
-
-        // crear <object> para renderizar PDF
-        const obj = document.createElement('object');
-        obj.id = 'pdfObject';
-        obj.type = 'application/pdf';
-        obj.data = url;
-        obj.width = '100%';
-        obj.height = '100%'; // <-- 100% para ocupar todo el espacio
-        obj.style.background = '#0f172a';
-        obj.style.display = 'block';
-        obj.style.minHeight = '0';
-        obj.style.minWidth = '0';
-        obj.style.position = 'relative';
-        wrapper.appendChild(obj);
-
-        const pdfNameEl = document.getElementById('pdfName');
-        if (pdfNameEl) pdfNameEl.textContent = '';
-        
-        const pdfFallback = document.getElementById('pdfFallback');
-        if (pdfFallback) pdfFallback.style.display = 'none';
     };
 
     // Mostrar y ocultar modal

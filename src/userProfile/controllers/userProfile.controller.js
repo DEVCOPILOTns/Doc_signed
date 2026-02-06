@@ -13,9 +13,12 @@ async function userProfileRender(req, res) {
       signedDocuments: pendingData.firmados,
       solicitedDocuments: solicitedDocument,
       name: req.user.givenName + ' ' + req.user.sn,
-      user: req.user.nombre_usuario,
+      user: req.user,
       dni: req.user.cedula,
-      urlSign: getSign.url_firma
+      urlSign: getSign.url_firma,
+      pendingCount: pendingData.pendientes,
+      nombre_usuario: req.user.nombre_usuario,
+      
     });
 
   } catch (err) {

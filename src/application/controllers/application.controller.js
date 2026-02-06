@@ -1,5 +1,6 @@
 const { getApplicationsByUser, getApplicationById, getApplicationDocuments } = require('../models/application.model');
 const {countPendingandSigned } = require('../../pending/models/pending.model');
+const {getFormatById} = require('../../createFormat/models/createFormat.model');
 
 //Funcion para contar estados
 function countApplicationStatus(docs = []) {
@@ -23,7 +24,6 @@ async function applicationRender(req, res) {
     let applicationDocs = [];
     if (userId) {
       applicationDocs = await getApplicationsByUser(userId);
-      
       // Enriquecer cada documento con la fecha correcta según el estado
       applicationDocs = applicationDocs.map(doc => {
         const estado = (doc.estado_solicitud || '').toString().toUpperCase();
@@ -60,8 +60,16 @@ async function applicationRender(req, res) {
       console.warn('applicationRender: no hay usuario logueado o id_registro_usuarios vacío');
     }
     const pendingData = await countPendingandSigned(userId);
-
+    const formatAndStages = await getFormatById(applicationDocs[0]?.id_formato);
     const statusCounts = countApplicationStatus(applicationDocs);
+    
+    // Obtener nombres de los firmantes desde las etapas del formato
+    let nombresFirmantes = [];
+    if (formatAndStages && formatAndStages.etapas && Array.isArray(formatAndStages.etapas)) {
+        nombresFirmantes = formatAndStages.etapas
+            .filter(etapa => etapa.nombre_completo) // Filtrar solo los que tengan nombre
+            .map(etapa => etapa.nombre_completo);
+    }
   
     res.render('application/views/applicationIndex', { 
       applicationDocs,
@@ -77,7 +85,10 @@ async function applicationRender(req, res) {
       countTotal: statusCounts.total,
       fecha_solicitud: applicationDocs[0]?.fecha_solicitud || null,
       fecha_firma: applicationDocs[0]?.fecha_firma || null,
-      fecha_rechazo: applicationDocs[0]?.fecha_rechazo || null
+      fecha_rechazo: applicationDocs[0]?.fecha_rechazo || null,
+      formato: applicationDocs[0]?.formato || null,
+      cantidadFirmantes: formatAndStages ? formatAndStages.cantidad_firmantes : 0,
+      nombresFirmantes: nombresFirmantes
     
     });
     
