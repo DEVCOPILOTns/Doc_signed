@@ -38,6 +38,54 @@ async function getApplicationsByUser(userId) {
     }   
 }
 
+async function getStageSignedByApplicationId(applicationId) {
+    try {        if (applicationId === undefined || applicationId === null || applicationId === '') {
+            return [];
+        }
+        const pool = await config.poolPromise;
+        const isInt = Number.isInteger(Number(applicationId));
+        const paramType = isInt ? sql.Int : sql.VarChar;
+        const result = await pool.request()
+            .input('applicationId', paramType, applicationId)
+            .query(`
+                SELECT
+                    ef.*,
+                    u.nombre_completo
+                FROM etapas_firmadas ef
+                LEFT JOIN Usuario u ON ef.id_firmante = u.id_registro_usuarios
+                WHERE ef.id_solicitud = @applicationId
+            `);
+        return result.recordset || [];
+    } catch (error) {        console.error('Error fetching signed stages by application id:', error);
+        throw error;
+    }
+}
+
+async function getStagesByFormatId(formatId) {
+    try {
+        if (formatId === undefined || formatId === null || formatId === '') {
+            return [];
+        }
+        const pool = await config.poolPromise;
+        const isInt = Number.isInteger(Number(formatId));
+        const paramType = isInt ? sql.Int : sql.VarChar;
+        const result = await pool.request()
+            .input('formatId', paramType, formatId)
+            .query(`
+                SELECT
+                    ef.*,
+                    u.nombre_completo
+                FROM etapas_firma ef
+                LEFT JOIN Usuario u ON ef.id_firmante = u.id_registro_usuarios
+                WHERE ef.formato_id = @formatId AND ef.estado = 'ACTIVO'
+                ORDER BY ef.orden
+            `);
+        return result.recordset || [];
+    } catch (error) {
+        console.error('Error fetching stages by format id:', error);
+        throw error;
+    }
+}
 
 // NUEVA función: obtener una solicitud y sus archivos por id
 async function getApplicationById(solicitudId) {
@@ -116,5 +164,7 @@ async function getApplicationDocuments(applicationId) {
 module.exports = {
     getApplicationsByUser,
     getApplicationById,
-    getApplicationDocuments
+    getApplicationDocuments,
+    getStageSignedByApplicationId,
+    getStagesByFormatId
 };

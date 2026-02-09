@@ -1,4 +1,4 @@
-const { getApplicationsByUser, getApplicationById, getApplicationDocuments } = require('../models/application.model');
+const { getApplicationsByUser, getApplicationById, getApplicationDocuments, getStageSignedByApplicationId, getStagesByFormatId } = require('../models/application.model');
 const {countPendingandSigned } = require('../../pending/models/pending.model');
 const {getFormatById} = require('../../createFormat/models/createFormat.model');
 
@@ -24,8 +24,8 @@ async function applicationRender(req, res) {
     let applicationDocs = [];
     if (userId) {
       applicationDocs = await getApplicationsByUser(userId);
-      // Enriquecer cada documento con la fecha correcta según el estado
-      applicationDocs = applicationDocs.map(doc => {
+      // Enriquecer cada documento con la fecha correcta según el estado y obtener etapas
+      applicationDocs = await Promise.all(applicationDocs.map(async (doc) => {
         const estado = (doc.estado_solicitud || '').toString().toUpperCase();
         
         let fechaAMostrar = null;
@@ -46,30 +46,57 @@ async function applicationRender(req, res) {
           etiquetaFecha = 'Fecha de solicitud: ';
         }
 
+        // Obtener etapas para CADA documento
+        let nombresFirmantes = [];
+        let etapas = [];
+        let etapaActual = null;
+        let nombreEtapaActual = 'N/A';
+        
+        // Si está FIRMADO, trae de etapas_firmadas (registro real de quiénes firmaron)
+        // Si NO está FIRMADO, trae de etapas_firma (firmantes esperados del formato)
+        if (estado === 'FIRMADO') {
+          etapas = await getStageSignedByApplicationId(doc.id_registro_solicitud);
+          nombreEtapaActual = 'Completado';
+        } else {
+          // Para solicitudes no firmadas, obtener las etapas esperadas del formato
+          etapas = await getStagesByFormatId(doc.id_formato);
+          
+          // Si hay etapa_actual en la solicitud, obtener el nombre del firmante de esa etapa
+          if (doc.etapa_actual && etapas && etapas.length > 0) {
+            const etapaActualObj = etapas.find(e => e.id_registro_etapa === doc.etapa_actual || e.orden === doc.etapa_actual);
+            if (etapaActualObj) {
+              etapaActual = etapaActualObj;
+              nombreEtapaActual = `${etapaActualObj.orden}. ${etapaActualObj.nombre_completo || 'Firmante desconocido'}`;
+            }
+          }
+        }
+        
+        if (etapas && etapas.length > 0) {
+          nombresFirmantes = etapas.map(etapa => etapa.nombre_completo || 'N/A');
+        }
 
+        // Obtener formato para CADA documento
+        const formatAndStages = await getFormatById(doc.id_formato);
+        const cantidadFirmantes = formatAndStages ? formatAndStages.cantidad_firmantes : 0;
         
         return {
           ...doc,
           fechaAMostrar: fechaAMostrar,
           etiquetaFecha: etiquetaFecha,
           estado_solicitud: estado,
-          comentario: comentario
+          comentario: comentario,
+          nombresFirmantes: nombresFirmantes,
+          cantidadFirmantes: cantidadFirmantes,
+          etapas: etapas,
+          etapaActual: etapaActual,
+          nombreEtapaActual: nombreEtapaActual
         };
-      });
+      }));
     } else {
       console.warn('applicationRender: no hay usuario logueado o id_registro_usuarios vacío');
     }
     const pendingData = await countPendingandSigned(userId);
-    const formatAndStages = await getFormatById(applicationDocs[0]?.id_formato);
     const statusCounts = countApplicationStatus(applicationDocs);
-    
-    // Obtener nombres de los firmantes desde las etapas del formato
-    let nombresFirmantes = [];
-    if (formatAndStages && formatAndStages.etapas && Array.isArray(formatAndStages.etapas)) {
-        nombresFirmantes = formatAndStages.etapas
-            .filter(etapa => etapa.nombre_completo) // Filtrar solo los que tengan nombre
-            .map(etapa => etapa.nombre_completo);
-    }
   
     res.render('application/views/applicationIndex', { 
       applicationDocs,
@@ -86,9 +113,7 @@ async function applicationRender(req, res) {
       fecha_solicitud: applicationDocs[0]?.fecha_solicitud || null,
       fecha_firma: applicationDocs[0]?.fecha_firma || null,
       fecha_rechazo: applicationDocs[0]?.fecha_rechazo || null,
-      formato: applicationDocs[0]?.formato || null,
-      cantidadFirmantes: formatAndStages ? formatAndStages.cantidad_firmantes : 0,
-      nombresFirmantes: nombresFirmantes
+      formato: applicationDocs[0]?.formato || null
     
     });
     

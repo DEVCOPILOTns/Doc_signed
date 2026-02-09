@@ -1,5 +1,5 @@
 const {countPendingandSigned } = require('../../pending/models/pending.model');
-const { saveFormat, saveStages, getFormatsByUser, getFormatById, updateFormat, changeStagesByFormatId, updateStage, updateFormatStageCount, changeFormatStatus} = require('../models/createFormat.model');
+const { saveFormat, saveStages, getFormatsByUser, getFormatById, updateFormat, changeStagesByFormatId, updateStage, updateFormatStageCount, changeFormatStatus, getapplicationByFormatId} = require('../models/createFormat.model');
 const { getSignerUsers } = require('../../masiveSign/models/request.model');
 
 async function createFormatRender(req, res) {
@@ -86,16 +86,29 @@ async function updateFormatData(req, res) {
             return res.status(400).json({ error: 'ID de formato inválido' });
         }
 
-        // Actualizar datos del formato
-        await updateFormat(
-            id_formato,
-            req.body.nombreFormato, 
-            req.body.descripcion, 
-            req.body.estado, 
-            req.body.cantidadFirmantes
-        );
+        const solicitudesByFormat =  await getapplicationByFormatId(id_formato);
+        console.log('Solicitudes asociadas al formato:', solicitudesByFormat);
+        if (solicitudesByFormat && solicitudesByFormat.length > 0) {
+            return res.status(200).json({ 
+                type: 'warning',
+                message: 'No se puede modificar un formato asociado a solicitudes existentes',
+                error: 'No se puede modificar un formato asociado a solicitudes existentes' 
+            });
+        }
 
-        // Desactivar solo las etapas que fueron eliminadas
+        // Obtener el estado actual del formato
+        const { countActiveStages } = require('../models/createFormat.model');
+        const etapasActualesActivas = await countActiveStages(id_formato);
+        const etapasAEliminar = req.body.etapasEliminar ? req.body.etapasEliminar.length : 0;
+        const etapasNuevas = req.body.etapas ? req.body.etapas.filter(e => !e.id_registro_etapa).length : 0;
+        const etapasQueQuedaranActivas = etapasActualesActivas - etapasAEliminar + etapasNuevas;
+
+        // Validar que no se eliminen todas las etapas
+        if (etapasQueQuedaranActivas <= 0) {
+            return res.status(400).json({ error: 'Un formato debe tener al menos una etapa activa' });
+        }
+
+        // Desactivar las etapas que fueron eliminadas PRIMERO
         if (req.body.etapasEliminar && req.body.etapasEliminar.length > 0) {
             for (const id_etapa of req.body.etapasEliminar) {
                 await changeStagesByFormatId(id_etapa);
@@ -120,8 +133,17 @@ async function updateFormatData(req, res) {
             }
         }
         
-        // Actualizar cantidad de firmantes basado en etapas activas
+        // Actualizar cantidad de firmantes basado en etapas activas DESPUÉS de cambiar etapas
         await updateFormatStageCount(id_formato);
+
+        // Actualizar datos del formato DESPUÉS de actualizar cantidad de firmantes
+        await updateFormat(
+            id_formato,
+            req.body.nombreFormato, 
+            req.body.descripcion, 
+            req.body.estado, 
+            req.body.cantidadFirmantes
+        );
         
         res.status(200).send('Formato actualizado exitosamente');
     } catch (error) {

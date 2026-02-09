@@ -34,6 +34,7 @@ async function getPendingDocuments(userId, status = 'PENDIENTE') {
                     FROM etapas_firma ef
                     WHERE ef.formato_id = s.id_formato
                         AND ef.id_firmante = @userId
+                        AND ef.estado = 'ACTIVO'
                 )
             `;
         } else {
@@ -68,6 +69,7 @@ async function getPendingDocuments(userId, status = 'PENDIENTE') {
                     FROM etapas_firma ef
                     WHERE ef.formato_id = s.id_formato
                         AND ef.id_firmante = @userId
+                        AND ef.estado = 'ACTIVO'
                         AND NOT EXISTS (
                             SELECT 1
                             FROM Etapas_Firmadas efd
@@ -79,6 +81,7 @@ async function getPendingDocuments(userId, status = 'PENDIENTE') {
                             FROM etapas_firma ef_anterior
                             WHERE ef_anterior.formato_id = s.id_formato
                             AND ef_anterior.orden < ef.orden
+                            AND ef_anterior.estado = 'ACTIVO'
                             AND NOT EXISTS (
                                 SELECT 1
                                 FROM Etapas_Firmadas efd_anterior
@@ -173,7 +176,7 @@ async function gestStage(UserId, formatoId){
             .input('formatoId', sql.Int, formatoId)
             .query(`    
                 SELECT * FROM etapas_firma
-                WHERE id_firmante = @UserId AND formato_id = @formatoId
+                WHERE id_firmante = @UserId AND formato_id = @formatoId AND estado = 'ACTIVO'
                 ORDER BY orden ASC
             `);
         return result.recordset; 
@@ -183,7 +186,7 @@ async function gestStage(UserId, formatoId){
     }
 }
 
-// Nueva función para obtener TODAS las etapas de un formato (sin filtro de usuario)
+// Nueva función para obtener TODAS las etapas ACTIVAS de un formato (sin filtro de usuario)
 async function getAllStagesByFormat(formatoId){
     try {
         const pool = await config.poolPromise;
@@ -191,7 +194,7 @@ async function getAllStagesByFormat(formatoId){
             .input('formatoId', sql.Int, formatoId)
             .query(`    
                 SELECT * FROM etapas_firma
-                WHERE formato_id = @formatoId
+                WHERE formato_id = @formatoId AND estado = 'ACTIVO'
                 ORDER BY orden ASC
             `);
         return result.recordset; 
@@ -216,6 +219,7 @@ async function countPendingandSigned(userId) {
                     FROM etapas_firma ef
                     WHERE ef.formato_id = s.id_formato
                         AND ef.id_firmante = @userId
+                        AND ef.estado = 'ACTIVO'
                 )
             `);
         return result.recordset[0];

@@ -405,6 +405,7 @@ body {
             gap: var(--space-6);
             margin-top: 2.5rem;
             justify-content: center;
+            overflow: visible;
         }
 
         /* Card uniforme, alto mínimo y máximo, layout vertical */
@@ -416,11 +417,12 @@ body {
             transition: all var(--transition);
             cursor: pointer;
             width: 280px;
-            height: 320px;
+            min-height: 320px;
             margin: 0 auto;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            overflow: visible;
         }
 
         .document-card:hover {
@@ -499,8 +501,10 @@ body {
             background: linear-gradient(135deg, #f0f9fb 0%, #e8f8fb 100%);
             border: 1px solid #a5d8e8;
             border-radius: var(--radius-md);
-            overflow: hidden;
+            overflow: visible;
             transition: all var(--transition);
+            position: relative;
+            z-index: 10;
         }
 
         .firmantes-header {
@@ -552,8 +556,13 @@ body {
 
         .firmantes-list {
             padding: var(--space-3) var(--space-4);
-            background: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.95);
             animation: slideDown 0.3s ease-out;
+            border-top: 1px solid #a5d8e8;
+            position: relative;
+            z-index: 20;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-radius: 0 0 var(--radius-md) var(--radius-md);
         }
 
         @keyframes slideDown {
@@ -637,13 +646,12 @@ body {
 
         /* Estilos renovados para la sección de comentarios */
         .comment-section {
-            margin-top: var(--space-4);
+            margin-top: auto;
             background: white;
             border-radius: var(--radius-lg);
             border: 1px solid var(--border);
             overflow: hidden;
             transition: all var(--transition);
-            flex: 1;
             display: flex;
             flex-direction: column;
             min-height: 0;

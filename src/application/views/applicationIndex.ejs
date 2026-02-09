@@ -156,6 +156,13 @@
                                 <!-- Mostrar Formato -->
                                 <div class="document-user"><h4>Formato:</h4><%= doc.nombre_formato || 'Sin formato asignado' %></div>
 
+                                <!-- Mostrar etapa actual -->
+                                <% if (estado !== 'FIRMADO' && doc.nombreEtapaActual && doc.nombreEtapaActual !== 'N/A') { %>
+                                    <div class="document-user"><h4>Etapa Actual:</h4><%= doc.nombreEtapaActual %></div>
+                                <% } else if (estado === 'FIRMADO') { %>
+                                    <div class="document-user"><h4>Estado:</h4>Completamente Firmado</div>
+                                <% } %>
+
                                 <!-- Mostrar firmantes con botón de despliegue -->
                                 <div class="firmantes-section">
                                     <div class="firmantes-header">
@@ -166,9 +173,9 @@
                                         </button>
                                     </div>
                                     <div class="firmantes-list" style="display: none;">
-                                        <% if (nombresFirmantes && nombresFirmantes.length > 0) { %>
+                                        <% if (doc.nombresFirmantes && doc.nombresFirmantes.length > 0) { %>
                                             <ul class="firmantes-ul">
-                                                <% nombresFirmantes.forEach((firmante, index) => { %>
+                                                <% doc.nombresFirmantes.forEach((firmante, index) => { %>
                                                     <li class="firmante-item">
                                                         <span class="firmante-number"><%= index + 1 %></span>
                                                         <span class="firmante-name"><%= firmante %></span>

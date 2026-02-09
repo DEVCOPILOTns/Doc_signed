@@ -17,6 +17,20 @@ async function saveFormat(id_usuario, nombreFormato, descripcion, estado, cantid
     }
 }
 
+async function getapplicationByFormatId(id_formato) {
+    try {
+        let pool = await poolPromise;   
+        let result = await pool.request()
+            .input('id_formato', sql.Int, id_formato)
+            .query('SELECT * FROM solicitudes WHERE id_formato = @id_formato and estado_solicitud = \'PENDIENTE\'');
+        return result.recordset;
+    } catch (error) {
+        console.error('Error en getapplicationByFormatId:', error);
+        throw error;
+    }
+}
+
+
 async function saveStages(id_formato, etapas) {
     try {
         let pool = await poolPromise;
@@ -62,7 +76,7 @@ async function getFormatById(id_formato) {
 
         let formato = resultFormato.recordset[0];
 
-        // Obtener las etapas del formato con los nombres de los firmantes
+        // Obtener las etapas ACTIVAS del formato con los nombres de los firmantes
         let resultEtapas = await pool.request()
             .input('id_formato', sql.Int, id_formato)
             .query(`
@@ -71,7 +85,7 @@ async function getFormatById(id_formato) {
                     u.nombre_completo
                 FROM etapas_firma ef
                 LEFT JOIN Usuario u ON ef.id_firmante = u.id_registro_usuarios
-                WHERE ef.formato_id = @id_formato 
+                WHERE ef.formato_id = @id_formato AND ef.estado = 'ACTIVO'
                 ORDER BY ef.orden
             `);
         
@@ -156,10 +170,12 @@ async function countActiveStages(id_formato) {
 async function updateFormatStageCount(id_formato) {
     try {
         let totalEtapas = await countActiveStages(id_formato);
+        // Asegurar que al menos sea 1 para cumplir con la restricción CHECK
+        const cantidad = Math.max(totalEtapas, 1);
         let pool = await poolPromise;
         await pool.request()
             .input('id_formato', sql.Int, id_formato)
-            .input('cantidad_firmantes', sql.Int, totalEtapas)
+            .input('cantidad_firmantes', sql.Int, cantidad)
             .query(`
                 UPDATE formatos 
                 SET cantidad_firmantes = @cantidad_firmantes
@@ -197,5 +213,6 @@ module.exports = {
     updateStage,
     countActiveStages,
     updateFormatStageCount,
-    changeFormatStatus
+    changeFormatStatus,
+    getapplicationByFormatId
 };

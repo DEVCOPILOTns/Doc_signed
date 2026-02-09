@@ -127,20 +127,6 @@ let etapaCounter = 0;
                                             required
                                         />
                                     </div>
-                                    <div class="form-group etapa-field-full">
-                                        <label class="form-label">
-                                            Posición de Firma (JSON)
-                                        </label>
-                                        <input 
-                                            type="text" 
-                                            name="posicionFirma[]" 
-                                            class="form-input"
-                                            placeholder='{"x": 50, "y": -20}'
-                                            value="${etapa.posicion_firma || ''}"
-                                            style="background-color: #ffffff; border: 1px solid #ccc;"
-                                        />
-                                        <span class="form-help">Coordenadas relativas para la posición de la firma</span>
-                                    </div>
                                 </div>
                             </div>
                         `;
@@ -335,18 +321,6 @@ let etapaCounter = 0;
                                 required
                             />
                         </div>
-                        <div class="form-group etapa-field-full">
-                            <label class="form-label">
-                                Posición de Firma (JSON)
-                            </label>
-                            <input 
-                                type="text" 
-                                name="posicionFirma[]" 
-                                class="form-input"
-                                placeholder='{"x": 50, "y": -20}'
-                            />
-                            <span class="form-help">Coordenadas relativas para la posición de la firma</span>
-                        </div>
                     </div>
                 </div>
             `;
@@ -405,15 +379,13 @@ let etapaCounter = 0;
             etapas.forEach((etapa, index) => {
                 const idFirmante = etapa.querySelector('select[name="idFirmante[]"]').value;
                 const palabraClave = etapa.querySelector('input[name="palabraClave[]"]').value.trim();
-                const posicionFirma = etapa.querySelector('input[name="posicionFirma[]"]').value.trim();
                 const idEtapa = etapa.dataset.etapaId; // ID de etapa existente si existe
 
                 formData.etapas.push({
                     id_registro_etapa: idEtapa || null, // null si es nueva etapa
                     orden: index + 1,
                     idFirmante,
-                    palabraClave,
-                    posicionFirma: posicionFirma || null
+                    palabraClave
                 });
             });
 
@@ -461,12 +433,32 @@ let etapaCounter = 0;
                         throw new Error(`HTTP ${response.status}: ${text}`);
                     });
                 }
-                return response.text();
+                return response.text().then(text => {
+                    // Intentar parsear como JSON
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        // Si no es JSON, devolver como texto
+                        return { message: text };
+                    }
+                });
             })
             .then(data => {
                 // Ocultar modal de carga inmediatamente
                 if (loadingModal) {
                     loadingModal.classList.remove('active');
+                }
+                
+                // Verificar si es una advertencia
+                if (data && data.type === 'warning') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Advertencia',
+                        text: data.message || data.error,
+                        confirmButtonColor: '#ff9800',
+                        confirmButtonText: 'Entendido'
+                    });
+                    return;
                 }
                 
                 const titulo = isEditing ? 'Actualizado' : 'Creado';
