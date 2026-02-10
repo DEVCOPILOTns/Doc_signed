@@ -17,7 +17,7 @@ async function userProfileRender(req, res) {
       dni: req.user.cedula,
       urlSign: getSign.url_firma,
       pendingCount: pendingData.pendientes,
-      nombre_usuario: req.user.nombre_usuario,
+      nombreusuario: req.user.nombre_usuario,
       
     });
 

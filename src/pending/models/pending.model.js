@@ -9,7 +9,8 @@ async function getPendingDocuments(userId, status = 'PENDIENTE') {
         let query;
 
         if (status === 'FIRMADO') {
-            // Para documentos firmados: solo trae las solicitudes FIRMADAS donde el usuario es signer
+            // Para documentos firmados: trae las solicitudes donde el usuario ha FIRMADO realmente
+            // Busca registros en Etapas_Firmadas (firmadas completadas) del usuario
             query = `
                 SELECT 
                     s.id_registro_solicitud,
@@ -19,7 +20,11 @@ async function getPendingDocuments(userId, status = 'PENDIENTE') {
                     s.tipo_solicitud,
                     s.fecha_solicitud,
                     s.motivo_rechazo,
-                    s.fecha_firma as fecha_mostrar,
+                    (SELECT TOP 1 fecha_firma 
+                     FROM Etapas_Firmadas 
+                     WHERE id_solicitud = s.id_registro_solicitud 
+                     AND id_firmante = @userId
+                     ORDER BY fecha_firma DESC) as fecha_mostrar,
                     u.nombre_usuario,
                     u.cedula,
                     u.nombre_completo,
@@ -28,13 +33,11 @@ async function getPendingDocuments(userId, status = 'PENDIENTE') {
                 FROM solicitudes AS s
                 JOIN Usuario AS u ON s.id_solicitante = u.id_registro_usuarios
                 LEFT JOIN formatos AS f ON s.id_formato = f.id_registro_formato
-                WHERE s.estado_solicitud = @status
-                AND EXISTS (
+                WHERE EXISTS (
                     SELECT 1
-                    FROM etapas_firma ef
-                    WHERE ef.formato_id = s.id_formato
+                    FROM Etapas_Firmadas ef
+                    WHERE ef.id_solicitud = s.id_registro_solicitud
                         AND ef.id_firmante = @userId
-                        AND ef.estado = 'ACTIVO'
                 )
             `;
         } else {
@@ -211,6 +214,7 @@ async function countPendingandSigned(userId) {
             .input('userId', sql.Int, userId)
             .query(`
                 SELECT 
+                    
                     SUM(CASE WHEN s.estado_solicitud = 'PENDIENTE' THEN 1 ELSE 0 END) AS pendientes,
                     SUM(CASE WHEN s.estado_solicitud = 'FIRMADO' THEN 1 ELSE 0 END) AS firmados
                 FROM solicitudes s

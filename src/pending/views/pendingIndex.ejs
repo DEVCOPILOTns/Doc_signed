@@ -15,19 +15,11 @@
 <body>
     <div class="container">
         <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon pending">📄</div>
+            <div class="stat-card" id="statsCard">
+                <div class="stat-icon" id="statsIcon">📄</div>
                 <div class="stat-content">
-                    <div class="stat-number" id="pendingNumber"><%= pendingDocuments %></div>
-                    <div class="stat-label">Solicitudes Pendientes</div>
-                    <div class="stat-change positive"></div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon signed">✓</div>
-                <div class="stat-content">
-                    <div class="stat-number" id="signedNumber"><%= signedDocuments %></div>
-                    <div class="stat-label">Documentos Firmados</div>
+                    <div class="stat-number" id="statsNumber"><%= status === 'FIRMADO' ? signedDocuments : pendingDocuments %></div>
+                    <div class="stat-label" id="statsLabel"><%= status === 'FIRMADO' ? 'Documentos Firmados' : 'Solicitudes Pendientes' %></div>
                     <div class="stat-change positive"></div>
                 </div>
             </div>
@@ -200,6 +192,38 @@
 
     <script src="/js/pending.controller.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Variables globales con los datos de estadísticas
+        const stats = {
+            pendientes: <%= pendingDocuments %>,
+            firmados: <%= signedDocuments %>
+        };
+
+        // Actualizar tarjeta de estadísticas basada en el estado actual
+        function updateStatsCard(status) {
+            const statsIcon = document.getElementById('statsIcon');
+            const statsNumber = document.getElementById('statsNumber');
+            const statsLabel = document.getElementById('statsLabel');
+
+            if (status === 'FIRMADO') {
+                statsIcon.textContent = '✓';
+                statsIcon.classList.remove('pending');
+                statsIcon.classList.add('signed');
+                statsNumber.textContent = stats.firmados;
+                statsLabel.textContent = 'Documentos Firmados';
+            } else {
+                statsIcon.textContent = '📄';
+                statsIcon.classList.remove('signed');
+                statsIcon.classList.add('pending');
+                statsNumber.textContent = stats.pendientes;
+                statsLabel.textContent = 'Solicitudes Pendientes';
+            }
+        }
+
+        // Inicializar con el estado actual
+        const currentStatus = '<%= status %>';
+        updateStatsCard(currentStatus);
+    </script>
 
 <%- include('../../components/footer.ejs') %>
 </body>

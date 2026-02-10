@@ -22,8 +22,10 @@ async function getPending(req, res) {
     const pendingData = await countPendingandSigned(req.user.id_registro_usuarios);
     return res.render('pending/views/pendingIndex', {
       status,
-      pendingDocuments: pendingData.pendientes,
-      signedDocuments: pendingData.firmados,
+      pendingDocuments: resultPending.length || 0,
+      //pendingDocuments: pendingData.pendientes,
+     //signedDocuments: pendingData.firmados,
+      signedDocuments: resultPending.length || 0,
       dateSigned: pendingData.fecha_firma,
       pendingDocs: resultPending
 
