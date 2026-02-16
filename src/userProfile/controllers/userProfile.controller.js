@@ -1,11 +1,11 @@
-const { countPendingandSigned, countSolicitedDocuments } = require('../../pending/models/pending.model');
+const { countPendingandSigned, countPendingByCurrentStage, countSolicitedDocuments } = require('../../pending/models/pending.model');
 const {getUserById} = require('../../users/models/users.model');
 const { updateSignUser } = require('../models/userProfile.model.js');
 
 
 async function userProfileRender(req, res) {
   try {
-    const pendingData = await countPendingandSigned(req.user.id_registro_usuarios);
+    const pendingData = await countPendingByCurrentStage(req.user.id_registro_usuarios);
     const getSign = await getUserById(req.user.id_registro_usuarios);
     const solicitedDocument = await countSolicitedDocuments(req.user.id_registro_usuarios);
     return res.render('userProfile/views/userProfileIndex', {

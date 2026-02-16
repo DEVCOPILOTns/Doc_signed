@@ -1,10 +1,10 @@
-const {countPendingandSigned } = require('../../pending/models/pending.model');
+const {countPendingandSigned, countPendingByCurrentStage } = require('../../pending/models/pending.model');
 const { saveFormat, saveStages, getFormatsByUser, getFormatById, updateFormat, changeStagesByFormatId, updateStage, updateFormatStageCount, changeFormatStatus, getapplicationByFormatId} = require('../models/createFormat.model');
 const { getSignerUsers } = require('../../masiveSign/models/request.model');
 
 async function createFormatRender(req, res) {
     const formats = await getFormatsByUser(req.user.id_registro_usuarios);
-    const pendingData = await countPendingandSigned(req.user.id_registro_usuarios);
+    const pendingData = await countPendingByCurrentStage(req.user.id_registro_usuarios);
     const signerUsers = await getSignerUsers();
     return res.render('createFormat/views/createFormatIndex', { 
         pendingData,

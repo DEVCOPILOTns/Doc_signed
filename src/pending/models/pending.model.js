@@ -233,6 +233,58 @@ async function countPendingandSigned(userId) {
     }
 }
 
+// Nueva función para contar SOLO los pendientes donde el usuario está en su etapa ACTUAL
+async function countPendingByCurrentStage(userId) {
+    try {
+        const pool = await config.poolPromise;
+        const result = await pool.request()
+            .input('userId', sql.Int, userId)
+            .query(`
+                SELECT 
+                    (SELECT COUNT(DISTINCT s.id_registro_solicitud)
+                     FROM solicitudes AS s
+                     WHERE s.estado_solicitud = 'PENDIENTE'
+                     AND EXISTS (
+                        SELECT 1
+                        FROM etapas_firma ef
+                        WHERE ef.formato_id = s.id_formato
+                            AND ef.id_firmante = @userId
+                            AND ef.estado = 'ACTIVO'
+                            AND NOT EXISTS (
+                                SELECT 1
+                                FROM Etapas_Firmadas efd
+                                WHERE efd.id_solicitud = s.id_registro_solicitud
+                                AND efd.id_etapa = ef.id_registro_etapa
+                            )
+                            AND NOT EXISTS (
+                                SELECT 1
+                                FROM etapas_firma ef_anterior
+                                WHERE ef_anterior.formato_id = s.id_formato
+                                AND ef_anterior.orden < ef.orden
+                                AND ef_anterior.estado = 'ACTIVO'
+                                AND NOT EXISTS (
+                                    SELECT 1
+                                    FROM Etapas_Firmadas efd_anterior
+                                    WHERE efd_anterior.id_solicitud = s.id_registro_solicitud
+                                    AND efd_anterior.id_etapa = ef_anterior.id_registro_etapa
+                                )
+                            )
+                     )) AS pendientes,
+                    (SELECT COUNT(DISTINCT efd.id_solicitud)
+                     FROM Etapas_Firmadas efd
+                     WHERE efd.id_firmante = @userId) AS firmados
+            `);
+        const row = result.recordset[0];
+        return {
+            pendientes: row.pendientes || 0,
+            firmados: row.firmados || 0
+        };
+    } catch (error) {
+        console.error('Error al contar documentos pendientes por etapa actual:', error);
+        throw error;
+    }
+}
+
 async function countSolicitedDocuments(userId) {
     try {
         const pool = await config.poolPromise;
@@ -417,6 +469,7 @@ module.exports = {
     getDetallesDocuments,
     countSolicitedDocuments,
     countPendingandSigned,
+    countPendingByCurrentStage,
     getUserInfo,
     changeStateApplication,
     createDocumentSigned,

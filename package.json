@@ -1,9 +1,10 @@
 {
-  "name": "doc_signed",
+  "name": "NSigned",
   "version": "1.0.0",
   "main": "app.js",
   "scripts": {
-    "dev": "nodemon app.js"
+  "dev": "nodemon app.js",
+  "start": "node app.js"
   },
   "keywords": [],
   "author": "",
@@ -26,7 +27,6 @@
     "multer": "^2.0.2",
     "node-tesseract-ocr": "^2.2.1",
     "nodemailer": "^7.0.13",
-    "nodemon": "^3.1.10",
     "passport": "^0.7.0",
     "passport-ldapauth": "^3.0.1",
     "pdf-lib": "^1.17.1",
@@ -37,6 +37,9 @@
     "read": "^4.1.0",
     "sharp": "^0.34.4",
     "sweetalert2": "^11.25.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
   },
   "eslintConfig": {
     "extends": "standard"

@@ -1,5 +1,5 @@
 const { getApplicationsByUser, getApplicationById, getApplicationDocuments, getStageSignedByApplicationId, getStagesByFormatId } = require('../models/application.model');
-const {countPendingandSigned } = require('../../pending/models/pending.model');
+const {countPendingandSigned, countPendingByCurrentStage } = require('../../pending/models/pending.model');
 const {getFormatById} = require('../../createFormat/models/createFormat.model');
 
 //Funcion para contar estados
@@ -95,7 +95,7 @@ async function applicationRender(req, res) {
     } else {
       console.warn('applicationRender: no hay usuario logueado o id_registro_usuarios vacío');
     }
-    const pendingData = await countPendingandSigned(userId);
+    const pendingData = await countPendingByCurrentStage(userId);
     const statusCounts = countApplicationStatus(applicationDocs);
   
     res.render('application/views/applicationIndex', { 

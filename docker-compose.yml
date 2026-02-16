@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  nueva-app:
+    build: .
+    container_name: nueva-app
+    restart: unless-stopped
+    ports:
+      - "3008:3000"
+    env_file:
+      - .env
