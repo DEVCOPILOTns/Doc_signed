@@ -1,4 +1,5 @@
 const PDFLib = require('pdf-lib');
+const path = require('path');
 const {getDetallesDocuments, getPendingDocuments, gestStage, getapplication, countPendingandSigned, createStageSigned, changeStateApplication, createDocumentSigned, getUserInfo, getStagesSignedByapplication, updateApplicationActualStage, getLastSignedDocument, updateDocumentSigned, getAllStagesByFormat
 } = require('../models/pending.model');
 const { getFormatById } = require('../../createFormat/models/createFormat.model');
@@ -60,6 +61,12 @@ async function signAllDocuments(req, res) {
     try {
         const { selectedFormat, COORDS } = req.body;
         
+        // Construir URL base dinámica del servidor
+        const xForwardedProto = req.get('x-forwarded-proto');
+        const protocol = xForwardedProto || req.protocol || 'http';
+        const host = req.get('host') || 'localhost:3000';
+        const baseUrl = `${protocol}://${host}`;
+        
         // Validar usuario y documento
         if (!req.user?.id_registro_usuarios) {
             return res.status(401).json({ message: 'Usuario no autenticado' });
@@ -78,7 +85,7 @@ async function signAllDocuments(req, res) {
         // Obtener información de firma del usuario
         const docPublicUrl = await getUserInfo(userInfo.id);
         if (!docPublicUrl?.url_firma) {
-            console.warn(`⚠️ Usuario ${userInfo.id} intenta firmar sin tener firma cargada`);
+            console.warn(`Usuario ${userInfo.id} intenta firmar sin tener firma cargada`);
             return res.status(400).json({ 
                 message: 'No existe firma para tu usuario. Por favor, carga tu firma en el perfil antes de firmar documentos.',
                 requiresSignature: true,
@@ -95,7 +102,7 @@ async function signAllDocuments(req, res) {
             const cleanUrl = rawUrl.trim().replace(/\\/g, '/');
             firmaUrl = cleanUrl.startsWith('http') 
                 ? new URL(cleanUrl)
-                : new URL(`/uploads/${path.basename(cleanUrl)}`, 'http://localhost:3000');
+                : new URL(`/uploads/${path.basename(cleanUrl)}`, baseUrl);
 
             console.log('Intentando obtener firma desde:', firmaUrl.toString());
 
@@ -187,7 +194,7 @@ async function signAllDocuments(req, res) {
                     }
 
                     // Asegurarse que la URL es absoluta
-                    const pdfUrl = new URL(pdfUrlToUse, 'http://localhost:3000').toString();
+                    const pdfUrl = new URL(pdfUrlToUse, baseUrl).toString();
                     
                     // Descargar PDF con validación de tipo
                     const pdfResponse = await fetch(pdfUrl, {
@@ -225,7 +232,13 @@ async function signAllDocuments(req, res) {
                     );
 
                     // Subir documento firmado
-                    const fileName = `${doc.nombre_original}-firmado.pdf`;
+                    // Extraer el nombre del archivo original y agregarle "_firmado" antes de la extensión
+                    const originalFileName = decodeURIComponent(path.basename(new URL(doc.url_archivo, baseUrl).pathname));
+                    const fileExt = path.extname(originalFileName);
+                    const fileNameWithoutExt = path.basename(originalFileName, fileExt);
+                    // Limpiar el nombre eliminando timestamps de multer (últimos 20-25 caracteres con formato -TIMESTAMP-RANDOM)
+                    const cleanFileName = fileNameWithoutExt.replace(/-\d{13,}-\d+$/, '');
+                    const fileName = `${cleanFileName}_firmado${fileExt}`;
                     const { publicUrl } = await uploadFileToStorage(signedPdfBytes, fileName, req);
 
                     // Registrar documento firmado
@@ -351,7 +364,7 @@ async function signAllDocuments(req, res) {
 
                         console.log(`    Correo de finalización enviado correctamente\n`);
                     } catch (errorEmail) {
-                        console.error(`   ❌ Error al enviar correo de finalización:`, errorEmail.message);
+                        console.error(`Error al enviar correo de finalización:`, errorEmail.message);
                     }
 
                     console.log('─'.repeat(60) + '\n');
