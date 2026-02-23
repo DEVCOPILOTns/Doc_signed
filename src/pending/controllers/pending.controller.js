@@ -53,6 +53,9 @@ async function getDetallesBySolicitud(req, res) {
     }
 }
 
+
+
+
 async function signAllDocuments(req, res) {
     try {
         const { selectedFormat, COORDS } = req.body;
@@ -75,7 +78,12 @@ async function signAllDocuments(req, res) {
         // Obtener información de firma del usuario
         const docPublicUrl = await getUserInfo(userInfo.id);
         if (!docPublicUrl?.url_firma) {
-            return res.status(400).json({ message: 'URL de firma no encontrada' });
+            console.warn(`⚠️ Usuario ${userInfo.id} intenta firmar sin tener firma cargada`);
+            return res.status(400).json({ 
+                message: 'No existe firma para tu usuario. Por favor, carga tu firma en el perfil antes de firmar documentos.',
+                requiresSignature: true,
+                redirectTo: '/api/userProfile'
+            });
         }
 
         // Modificar la parte de obtención de firma
@@ -268,8 +276,8 @@ async function signAllDocuments(req, res) {
                     const userFirmante = await getUserInfo(allStages[proximaEtapa - 1].id_firmante);
                     const emailFirmante = `${userFirmante.nombre_usuario.trim()}@newstetic.com`.toLowerCase();
 
-                    console.log(`👤 Siguiente Firmante: ${userFirmante.nombre_completo}`);
-                    console.log(`📧 Email: ${emailFirmante}`)
+                    console.log(` Siguiente Firmante: ${userFirmante.nombre_completo}`);
+                    console.log(` Email: ${emailFirmante}`)
                     await sendMail({
                         to: emailFirmante,
                         type: 'signer',
@@ -279,20 +287,20 @@ async function signAllDocuments(req, res) {
                         },
                         text: `Hola ${userFirmante.nombre_completo},\n\nTienes una nueva solicitud de firma pendiente.\n\nDetalles:\n- Solicitante: ${docPublicUrl.nombre_completo}\n- Formato: ${formatInfo.nombre_formato}\n\nPor favor, ingresa al sistema para revisar y firmar los documentos asignados.\n\nEste es un correo automático. Por favor no respondas directamente a este mensaje.\nSi tienes dudas, contacta al administrador del sistema.`
                       });
-                    console.log(`✅ Correo enviado al siguiente firmante`);
+                    console.log(` Correo enviado al siguiente firmante`);
                 } else {
-                    console.log(`⚠️  No se puede enviar correo al siguiente firmante - Validación fallida (proximaEtapa: ${proximaEtapa}, cantidad_firmantes: ${formatInfo.cantidad_firmantes}, allStages.length: ${allStages.length})`);
+                    console.log(`  No se puede enviar correo al siguiente firmante - Validación fallida (proximaEtapa: ${proximaEtapa}, cantidad_firmantes: ${formatInfo.cantidad_firmantes}, allStages.length: ${allStages.length})`);
                 }
 
             // Actualizar estado si todo fue exitoso
             if (resultados.every(r => r.firmado)) {
 
                 if (stagesSigned.length === formatInfo.cantidad_firmantes) {
-                    console.log('✅ Todos los stages firmados - Iniciando envío de correo de finalización');
+                    console.log(' Todos los stages firmados - Iniciando envío de correo de finalización');
                     await changeStateApplication(userInfo.selectedDocumentId, 'FIRMADO', null);
 
                     // ==================== ENVIAR CORREO AL SOLICITANTE - SOLICITUD COMPLETADA ====================
-                    console.log('\n📧 ===== ENVIANDO NOTIFICACIÓN DE FINALIZACIÓN AL SOLICITANTE ===== 📧');
+                    console.log('\n ===== ENVIANDO NOTIFICACIÓN DE FINALIZACIÓN AL SOLICITANTE ===== ');
                     console.log('─'.repeat(60));
                     console.log(`ID de Solicitud: ${application.id_registro_solicitud}`);
                     console.log(`ID de Solicitante: ${application.id_solicitante}`);
@@ -322,9 +330,9 @@ async function signAllDocuments(req, res) {
                           firmantes.push(`${i + 1}. ${userFirmante.nombre_usuario}`);
                         }
 
-                        console.log(`   👤 Solicitante: ${solicitanteInfo.nombre_completo}`);
-                        console.log(`   📧 Email: ${emailSolicitante}`);
-                        console.log(`   📨 Enviando correo de finalización...`);
+                        console.log(`    Solicitante: ${solicitanteInfo.nombre_completo}`);
+                        console.log(`    Email: ${emailSolicitante}`);
+                        console.log(`    Enviando correo de finalización...`);
 
                         await sendMail({
                             to: emailSolicitante,
@@ -341,7 +349,7 @@ async function signAllDocuments(req, res) {
                             }
                         });
 
-                        console.log(`   ✅ Correo de finalización enviado correctamente\n`);
+                        console.log(`    Correo de finalización enviado correctamente\n`);
                     } catch (errorEmail) {
                         console.error(`   ❌ Error al enviar correo de finalización:`, errorEmail.message);
                     }

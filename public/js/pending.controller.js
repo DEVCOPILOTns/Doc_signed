@@ -351,6 +351,31 @@ function signAllDocuments() {
             loadingModal.classList.remove('active');
         }
 
+        // Verificar si requiere firma
+        if (data.requiresSignature) {
+            Swal.fire({
+                icon: 'warning',
+                title: ' Firma No Cargada',
+                html: `
+                    <div style="text-align: left; line-height: 1.6;">
+                        <p><strong>${data.message}</strong></p>
+                        <p style="margin-top: 15px; color: #666; font-size: 0.9em;">
+                            Ve a tu perfil y carga una imagen de tu firma para poder firmar documentos.
+                        </p>
+                    </div>
+                `,
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'Ir a Cargar Firma',
+                showCancelButton: true,
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = data.redirectTo || '/api/userProfile';
+                }
+            });
+            return;
+        }
+
         if (data.message==='Proceso de firma completado') {
             Swal.fire({
                 icon: 'success',
@@ -359,7 +384,7 @@ function signAllDocuments() {
                 confirmButtonColor: '#3085d6',
                 confirmButtonText: 'Aceptar'
             }).then(() => {
-                // 🔥 Espera a que el usuario cierre la alerta antes de recargar
+                // Espera a que el usuario cierre la alerta antes de recargar
                 window.location.reload();
             });
            

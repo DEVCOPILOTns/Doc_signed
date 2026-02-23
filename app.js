@@ -21,6 +21,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(morgan('dev'));
 
+// Configurar para confiar en proxy reverso (importante para HTTPS en producción)
+app.set('trust proxy', 1);
+
 // Motor de vistas EJS
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'src'));

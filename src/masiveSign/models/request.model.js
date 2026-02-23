@@ -27,6 +27,7 @@ async function saveSolicitud(id_solicitante, id_formato, tipo_solicitud, comenta
 async function saveDetalles(idSolicitud, url, formato) {
     try {
         const pool = await config.poolPromise;
+        console.log(`💾 BD: ${url}`);
         return pool.request()
             .input('idSolicitud', sql.Int, idSolicitud)
             .input('url', sql.VarChar, url)

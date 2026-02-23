@@ -47,7 +47,7 @@ exports.login = async (req, res) => {
     const token = generateToken({...users, ...user});//aqui al llamar userInfoValid, el token trae toda la info del usuario
     res.cookie('token', token, { 
       httpOnly: true, 
-      secure: false, 
+      secure: true, 
       maxAge: 3600000 
     }); // Configuro la cookie con el token JWT, dura 1 hora  
     

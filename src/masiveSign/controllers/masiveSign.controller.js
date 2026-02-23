@@ -28,7 +28,13 @@ async function uploadFiles(req, res) {
 
     // Procesar archivos con URL pública
     const processedFiles = req.files.map(file => {
-      const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${file.filename}`;
+      const xForwardedProto = req.get('x-forwarded-proto');
+      const protocol = xForwardedProto || req.protocol || 'http';
+      const host = req.get('host') || 'localhost:3000';
+      const fileUrl = `${protocol}://${host}/uploads/${file.filename}`;
+      
+      console.log(`🔗 URL ARCHIVO: ${fileUrl}`);
+      
       return {
         filename: file.filename,
         originalName: file.originalname,
@@ -160,6 +166,7 @@ async function uploadFiles(req, res) {
     console.log('─'.repeat(60) + '\n');
 
     for (let index = 0; index < processedFiles.length; index++) {
+      console.log(`📝 URL Guardando: ${processedFiles[index].url}`);
       await saveDetalles(idSolicitud, processedFiles[index].url, req.body.formato);
     }
 

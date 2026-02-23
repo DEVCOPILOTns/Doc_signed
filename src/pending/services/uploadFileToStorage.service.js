@@ -46,10 +46,17 @@ async function uploadFileToStorage(fileBuffer, fileName, req) {
         await fs.writeFile(filePath, fileBuffer);
 
         // Construir la URL dinámicamente basada en la solicitud HTTP
-        // Funciona tanto en localhost como en dominio de producción
-        const protocol = req.protocol || 'http';
+        // Con nginx, confiamos en X-Forwarded-Proto
+        const xForwardedProto = req.get('x-forwarded-proto');
+        const protocol = xForwardedProto || req.protocol || 'http';
         const host = req.get('host') || 'localhost:3000';
         const publicUrl = `${protocol}://${host}/uploads/signed/${uniqueFileName}`;
+
+        console.log(`\n URL AL FIRMAR:`);
+        console.log(`   X-Forwarded-Proto: ${xForwardedProto || 'no definido (CHEQUEAR NGINX)'}`);
+        console.log(`   Protocol detectado: ${protocol}`);
+        console.log(`   Host: ${host}`);
+        console.log(`   URL: ${publicUrl}\n`);
 
         return {
             publicUrl,
