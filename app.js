@@ -17,8 +17,8 @@ const creteFormatRouter = require('./src/createFormat/routes/createFormat.route.
 const moddlewareNav = require ('./src/components/nav.middleware.js')
 
 app.use(cookieParser())
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: '50mb' }));
 app.use(morgan('dev'));
 
 // Configurar para confiar en proxy reverso (importante para HTTPS en producción)

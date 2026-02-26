@@ -31,35 +31,28 @@ async function userProfileRender(req, res) {
 async function uploadSign(req, res) {
 
   try {
-    if (!req.files || req.files.length === 0) {
+    if (!req.file) {
       return res.status(400).json({
         error: true,
-        message: 'No se subieron archivos',
+        message: 'No se subió archivo',
       });
     }
 
-    // Procesar archivos con URL pública
-    const processedFiles = req.files.map(file => {
-      const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${file.filename}`;
+    // Procesar archivo con URL pública
+    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
 
-      return {
-        filename: file.filename,
-        originalName: file.originalname,
-        path: file.path,
-        size: file.size,
-        mimetype: file.mimetype,
-        url: fileUrl, // ✅ URL lista para guardar en BD
-      };
+    console.log('Archivo procesado:', fileUrl);
+    const updateSign = await updateSignUser(req.user.id_registro_usuarios, fileUrl);
+
+    // Devolver JSON en lugar de redirect
+    return res.status(200).json({
+      error: false,
+      message: 'Firma guardada exitosamente',
+      url: fileUrl
     });
 
-    const url = processedFiles[0].url;
-    console.log('Archivo procesado:', processedFiles[0].url);
-    const updateSign = await updateSignUser(req.user.id_registro_usuarios, url);
-
-    return res.redirect('/api/userProfile');
-
   } catch (error) {
-    console.error('❌ Error en uploadFiles:', error);
+    console.error('❌ Error en uploadSign:', error);
     return res.status(500).json({
       error: true,
       message: 'Error interno del servidor',

@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/css/userProfile.css">
     <link rel="stylesheet" href="/css/footer.css">
     <link rel="stylesheet" href="/css/nav.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <title>NewStetic - NSigned</title>
 
 </head>
@@ -120,14 +121,21 @@
                         <label for="signatureUpload" class="upload-area">
                             <div class="upload-icon">📁</div>
                             <div class="upload-text">Arrastra tu firma aquí o haz clic para seleccionar</div>
-                            <div class="upload-hint">Formatos soportados: PNG, JPG, SVG (Máx. 2MB)</div>
+                            <div class="upload-hint">Formatos soportados: PNG, JPG, SVG (Máx. 15MB)</div>
                             <input type="file" id="signatureUpload" name="files" accept="image/*">
                         </label>
 
                         <div class="signature-preview">
                             <div class="preview-title">Vista previa de tu firma:</div>
                             <div class="preview-image">
-                                <img src="<%= urlSign %>" alt="Firma guardada" id="signaturePreview">
+                                <% if (urlSign && urlSign !== '') { %>
+                                    <img src="<%= urlSign %>" alt="Firma guardada" id="signaturePreview">
+                                <% } else { %>
+                                    <img src="<%= urlSign %>" alt="Firma guardada" id="signaturePreview" style="display: none;">
+                                    <div style="text-align: center; color: #9ca3af; font-size: 0.9rem;">
+                                        Carga una imagen para ver la vista previa
+                                    </div>
+                                <% } %>
                             </div>
                         </div>
 
@@ -143,7 +151,7 @@
     </div>
 </main>
 
-    <script src="/public/js/userProfile.controller.js"></script>
+    <script src="/js/userProfile.controller.js"></script>
     <%- include('../../components/footer.ejs') %>
 </body>
 </html>

@@ -407,11 +407,13 @@ body {
 }
 
 .signature-preview {
-    background: rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(241, 245, 249, 0.5) 100%);
     border-radius: var(--radius-lg);
     padding: var(--space-4);
     display: flex;
     flex-direction: column;
+    border: 2px solid rgba(0, 163, 180, 0.1);
+    margin-bottom: var(--space-4);
 }
 
 .preview-title {
@@ -419,20 +421,47 @@ body {
     opacity: 0.9;
     margin-bottom: var(--space-3);
     font-weight: 600;
+    color: var(--primary-700);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .preview-image {
     background: white;
     border-radius: var(--radius-lg);
     padding: var(--space-4);
-    min-height: 150px;
+    min-height: 180px;
     width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed var(--primary-300);
+    box-shadow: inset 0 2px 8px rgba(0, 163, 180, 0.05);
+    transition: all 0.3s ease;
+}
+
+.preview-image:hover {
+    border-color: var(--primary-500);
+    box-shadow: inset 0 2px 8px rgba(0, 163, 180, 0.1);
 }
 
 .preview-image img {
     width: 100%;
-    height: 100%;
+    height: auto;
+    max-height: 150px;
     object-fit: contain;
+    animation: fadeIn 0.4s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 .btn {
@@ -459,15 +488,25 @@ body {
     font-weight: 600;
     width: 100%;
     margin-top: var(--space-4);
+    transition: all 0.3s ease;
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
-.btn-primary:active {
+.btn-primary:active:not(:disabled) {
     transform: translateY(0);
+}
+
+.btn-primary:disabled {
+    background: #e5e7eb;
+    color: #9ca3af;
+    cursor: not-allowed;
+    opacity: 0.6;
+    box-shadow: none;
+    transform: none;
 }
 
 /* ========== RESPONSIVE MEJORADO ========== */
