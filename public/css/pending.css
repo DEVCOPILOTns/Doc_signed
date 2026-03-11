@@ -426,6 +426,33 @@
     transform: translateY(0);
 }
 
+/* Botón Descargar Todos mejorado */
+.btn-download-all {
+    display: inline-flex;
+    color: white;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0.75rem 1.75rem;
+    background: var(--primary-500);
+    border-radius: var(--radius-md);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+    font-family: var(--font-sans);
+    border: none;
+}
+
+.btn-download-all:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    background: rgba(0, 163, 180, 0.85);
+}
+
+.btn-download-all:active {
+    transform: translateY(0);
+}
+
 .btn-icon {
     width: 18px;
     height: 18px;
@@ -472,6 +499,7 @@
     margin-bottom: 0;
 }
 
+/* Acciones en tarjeta de documento */
 /* Grid de detalles mejorado */
 .detalles-grid {
     display: grid;

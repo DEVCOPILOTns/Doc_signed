@@ -1,6 +1,9 @@
-const { getApplicationsByUser, getApplicationById, getApplicationDocuments, getStageSignedByApplicationId, getStagesByFormatId } = require('../models/application.model');
+const { getApplicationsByUser, getApplicationById, getApplicationDocuments, getAllDocumentsForDownload, getStageSignedByApplicationId, getStagesByFormatId } = require('../models/application.model');
 const {countPendingandSigned, countPendingByCurrentStage } = require('../../pending/models/pending.model');
 const {getFormatById} = require('../../createFormat/models/createFormat.model');
+const path = require('path');
+const fs = require('fs');
+const archiver = require('archiver');
 
 //Funcion para contar estados
 function countApplicationStatus(docs = []) {
@@ -154,4 +157,155 @@ async function applicationDetails(req, res) {
   }
 }
 
-module.exports = { applicationRender, applicationData, applicationDetails };
+// Función para descargar todos los documentos como ZIP
+async function downloadAllApplicationDocuments(req, res) {
+    try {
+        const { idSolicitud } = req.params;
+        
+        if (!idSolicitud) {
+            return res.status(400).json({ error: 'ID de solicitud requerido' });
+        }
+
+        console.log(`\n[DESCARGA] ========== INICIANDO DESCARGA MASIVA ==========`);
+        console.log(`[DESCARGA] ID de solicitud: ${idSolicitud}`);
+
+        // Obtener todos los documentos firmados de la aplicación
+        const detalles = await getAllDocumentsForDownload(idSolicitud);
+
+        if (!detalles || detalles.length === 0) {
+            console.error(`[DESCARGA] ❌ No hay documentos para descargar`);
+            return res.status(404).json({ error: 'No hay documentos para descargar' });
+        }
+
+        console.log(`[DESCARGA] 📄 Total de documentos encontrados: ${detalles.length}`);
+
+        // Preparar response como ZIP
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', `attachment; filename="solicitud_${idSolicitud}.zip"`);
+
+        const archive = archiver('zip', { zlib: { level: 9 } });
+
+        // Capturar errores del archive
+        archive.on('error', (err) => {
+            console.error('[DESCARGA] ❌ Error en archive:', err);
+            if (!res.headersSent) {
+                res.status(500).json({ error: 'Error al crear el ZIP' });
+            }
+        });
+
+        // Piping del archive al response
+        archive.pipe(res);
+
+        // Agregar cada documento al ZIP
+        let archivosAgregados = 0;
+        let archivosNoEncontrados = [];
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+
+        for (let i = 0; i < detalles.length; i++) {
+            const detalle = detalles[i];
+            let fileUrl = detalle.url_archivo;
+
+            if (!fileUrl) {
+                console.warn(`[DESCARGA] ⚠️  Documento ${i + 1} sin URL`);
+                archivosNoEncontrados.push(`Documento ${i + 1}: Sin URL en BD`);
+                continue;
+            }
+
+            try {
+                const cleanFileName = detalle.nombre_original || `documento_${i + 1}.pdf`;
+                
+                console.log(`[DESCARGA] \n📝 Procesando documento ${i + 1}/${detalles.length}`);
+                console.log(`[DESCARGA]    Nombre: ${cleanFileName}`);
+                console.log(`[DESCARGA]    URL en BD: ${fileUrl}`);
+
+                // IMPORTANTE: Construir URL absoluta si es relativa
+                let fullUrl = fileUrl;
+                
+                // Si NO comienza con http, es una ruta relativa - agregar protocolo y host
+                if (!fileUrl.startsWith('http://') && !fileUrl.startsWith('https://')) {
+                    fullUrl = `${baseUrl}${fileUrl}`;
+                    console.log(`[DESCARGA]    URL construida: ${fullUrl}`);
+                }
+
+                // Descargar el archivo vía HTTP/HTTPS
+                console.log(`[DESCARGA] 🔄 Descargando desde URL...`);
+                
+                // Crear un controller with timeout
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 30000); // 30 segundos
+                
+                try {
+                    const fileResponse = await fetch(fullUrl, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/pdf, application/*'
+                        },
+                        signal: controller.signal
+                    });
+
+                    clearTimeout(timeout);
+
+                    if (!fileResponse.ok) {
+                        throw new Error(`HTTP ${fileResponse.status}: ${fileResponse.statusText}`);
+                    }
+
+                    const contentType = fileResponse.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application')) {
+                        throw new Error(`Tipo de contenido incorrecto: ${contentType}`);
+                    }
+
+                    // Obtener el contenido del archivo
+                    const arrayBuffer = await fileResponse.arrayBuffer();
+                    const buffer = Buffer.from(arrayBuffer);
+
+                    if (!buffer || buffer.length === 0) {
+                        throw new Error('Archivo descargado está vacío');
+                    }
+
+                    // Agregar al ZIP
+                    archive.append(buffer, { name: cleanFileName });
+                    archivosAgregados++;
+                    
+                    console.log(`[DESCARGA] ✅ Archivo ${i + 1} agregado al ZIP (${(buffer.length / 1024).toFixed(2)} KB)`);
+
+                } catch (fetchErr) {
+                    clearTimeout(timeout);
+                    if (fetchErr.name === 'AbortError') {
+                        throw new Error('Timeout al descargar (30 segundos)');
+                    }
+                    throw fetchErr;
+                }
+
+            } catch (err) {
+                console.error(`[DESCARGA] ❌ Error descargando documento ${i + 1}:`, err.message);
+                archivosNoEncontrados.push(`${cleanFileName}: ${err.message}`);
+            }
+        }
+
+        // Resumen final
+        console.log(`\n[DESCARGA] ========== RESUMEN DE DESCARGA ==========`);
+        console.log(`[DESCARGA] ✅ Archivos agregados: ${archivosAgregados}/${detalles.length}`);
+        
+        if (archivosNoEncontrados.length > 0) {
+            console.log(`[DESCARGA] ❌ Archivos fallidos (${archivosNoEncontrados.length}):`);
+            archivosNoEncontrados.forEach(f => console.log(`[DESCARGA]    - ${f}`));
+        }
+        
+        console.log(`[DESCARGA] ===========================================\n`);
+
+        // Finalizar el archivo ZIP
+        archive.finalize();
+
+    } catch (error) {
+        console.error('[DESCARGA] ❌ Error general:', error.message);
+        if (!res.headersSent) {
+            return res.status(500).json({ 
+                error: true, 
+                message: 'Error al descargar los documentos',
+                details: error.message 
+            });
+        }
+    }
+}
+
+module.exports = { applicationRender, applicationData, applicationDetails, downloadAllApplicationDocuments };

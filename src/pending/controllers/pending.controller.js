@@ -153,19 +153,48 @@ async function signAllDocuments(req, res) {
 
 
             const application = await getapplication(userInfo.selectedDocumentId);
-                //console.log('info', application);
+                console.log('✓ Solicitud obtenida:', {id: application.id_registro_solicitud, formato: application.id_formato, etapa_actual: application.etapa_actual});
+                
             const stageResult = await gestStage(userInfo.id, application.id_formato);
-                //console.log('gestStage', stageResult);
+                console.log('✓ Etapas donde este usuario es firmante:', stageResult.map(s => `etapa ${s.orden}`).join(', '));
+                
+                if (!stageResult || stageResult.length === 0) {
+                    return res.status(400).json({ 
+                        message: 'No hay etapas pendientes para este usuario en este formato' 
+                    });
+                }
+                
             const formatInfo = await getFormatById(application.id_formato);
-                //console.log('formatInfo', formatInfo);
-            await createStageSigned(stageResult[0].id_registro_etapa, application.id_formato, application.id_registro_solicitud, stageResult[0].id_firmante, 'FIRMADO');
-            const stagesSigned = await getStagesSignedByapplication(userInfo.selectedDocumentId, application.id_formato);
-                //console.log('los stages firmados', stagesSigned.length, 
-                            //'la cantidad de firmantes del formato', formatInfo.cantidad_firmantes);
+                console.log('✓ Formato obtenido:', {nombre: formatInfo.nombre_formato, cantidad_firmantes: formatInfo.cantidad_firmantes});
             
-            // Calcular siguiente etapa (después de firmar) - no exceder cantidad_firmantes
-            const proximaEtapa = Math.min(stagesSigned.length + 1, formatInfo.cantidad_firmantes);
-            await updateApplicationActualStage(application.id_registro_solicitud, proximaEtapa);
+            const stagesSigned = await getStagesSignedByapplication(userInfo.selectedDocumentId, application.id_formato);
+                console.log('✓ Estados de firma actualizados:', stagesSigned.length, 'de', formatInfo.cantidad_firmantes);
+            
+            // 🔑 OBTENER PALABRAS CLAVE DE LA ETAPA ACTUAL DE LA SOLICITUD
+            // IMPORTANTE: Usar application.etapa_actual para obtener la etapa correcta, no la primera del usuario
+            const numeroEtapaActual = application.etapa_actual || stageResult[0].orden;
+            console.log(`🔑 Etapa actual de la solicitud: ${numeroEtapaActual}`);
+            
+            const etapaActual = formatInfo.etapas.find(e => e.orden === numeroEtapaActual);
+            
+            // ⚠️ VALIDACIÓN CRÍTICA: La palabra clave DEBE venir de la BD, sin valores por defecto
+            if (!etapaActual) {
+                return res.status(400).json({ 
+                    message: 'No se encontró la etapa actual en el formato' 
+                });
+            }
+            
+            const palabrasClaveStr = etapaActual.palabra_clave?.trim();
+            
+            if (!palabrasClaveStr || palabrasClaveStr === '') {
+                return res.status(400).json({ 
+                    message: 'ERROR CRÍTICO: La etapa no tiene palabras clave configuradas en la BD. Contacte al administrador.' 
+                });
+            }
+            
+            console.log('\n📋 ========== PROCESANDO DOCUMENTOS ==========');
+            console.log(`Etapa ${numeroEtapaActual} - Palabras clave: ${palabrasClaveStr}`);
+            console.log('🔑 Palabras clave a buscar:', palabrasClaveStr.split('|').map(p => `"${p}"`).join(', '));
 
             // Continuar con el procesamiento de documentos...
             const documentos = await getDetallesDocuments(userInfo.selectedDocumentId, 'PENDIENTE');
@@ -217,12 +246,38 @@ async function signAllDocuments(req, res) {
                     }
                     
 
-                    // Detectar área e insertar firma
-                    const signatureArea = await signatureService.detectSignatureArea(
-                        new Uint8Array(pdfBuffer),
-                        selectedFormat,
-                        stageResult[0].palabra_clave
-                    );
+                    // 🎯 DETECTAR ÁREA DE FIRMA AUTOMÁTICAMENTE
+                    console.log(`\n📄 Procesando: ${doc.nombre_original || 'documento'}`);
+                    let signatureArea = { 
+                        pageIndex: 0,
+                        x: 50, 
+                        y: 700, 
+                        width: 200, 
+                        height: 60 
+                    }; // Default
+                    
+                    try {
+                        console.log(`🔐 Buscando palabras clave: ${palabrasClaveStr}`);
+                        const detectionResult = await signatureService.detectSignatureArea(
+                            Buffer.from(pdfBuffer),
+                            'document',
+                            palabrasClaveStr
+                        );
+                        
+                        if (detectionResult) {
+                            signatureArea = detectionResult;
+                            console.log('✅ Área de firma detectada automáticamente');
+                        }
+                    } catch (detectionError) {
+                        console.error('\n' + '='.repeat(80));
+                        console.error('❌ FALLO EN LA DETECCIÓN DE FIRMA');
+                        console.error('='.repeat(80));
+                        console.error(`Documento: ${doc.nombre_original}`);
+                        console.error(`Palabras clave configuradas en BD: "${palabrasClaveStr}"`);
+                        console.error(`Error: ${detectionError.message}`);
+                        console.error('='.repeat(80) + '\n');
+                        throw detectionError;
+                    }
 
                     // Insertar la firma en el PDF
                     const signedPdfBytes = await signatureService.insertSignature(
@@ -250,10 +305,27 @@ async function signAllDocuments(req, res) {
                         await updateDocumentSigned(lastSigned.id_detalle_firmado, publicUrl);
                     } else {
                         // Crear nuevo registro si es el primero
-                        console.log('Creando nuevo registro de documento firmado');
+                        console.log('Creando nuevo registro de documento firmado', {
+                            publicUrl,
+                            idFirmante: userInfo.id,
+                            idDetalleSolicitud: doc.id_registro_detalles,
+                            idSolicitud: userInfo.selectedDocumentId
+                        });
+                        
+                        // Validar que los IDs sean números
+                        if (!userInfo.id || isNaN(userInfo.id)) {
+                            throw new Error('ID de firmante inválido');
+                        }
+                        if (!doc.id_registro_detalles || isNaN(doc.id_registro_detalles)) {
+                            throw new Error('ID de detalle de solicitud inválido');
+                        }
+                        if (!userInfo.selectedDocumentId || isNaN(userInfo.selectedDocumentId)) {
+                            throw new Error('ID de solicitud inválido');
+                        }
+                        
                         await createDocumentSigned(
                             publicUrl,
-                            doc.nombre_original,
+                            application.id_formato,
                             userInfo.id,
                             doc.id_registro_detalles,
                             userInfo.selectedDocumentId
@@ -267,7 +339,11 @@ async function signAllDocuments(req, res) {
                     });
 
                 } catch (error) {
-                    console.error(`Error al procesar documento ${doc.nombre_original}:`, error);
+                    console.error('\n' + '='.repeat(80));
+                    console.error(`❌ ERROR AL PROCESAR DOCUMENTO: ${doc.nombre_original}`);
+                    console.error('='.repeat(80));
+                    console.error(`Mensaje: ${error.message}`);
+                    console.error('='.repeat(80) + '\n');
                     resultados.push({
                         documento: doc.nombre_original,
                         firmado: false,
@@ -277,20 +353,54 @@ async function signAllDocuments(req, res) {
             }
              //aqui irá la funcion para el envio de emails
                 const solicitudInfo = await getapplication(userInfo.selectedDocumentId);
-                console.log('variables', formatInfo);
-                console.log('proximaEtapa (después de actualizar):', proximaEtapa);
                 
-                // Obtener TODAS las etapas del formato para validar correctamente
+            // Actualizar estado si todo fue exitoso
+            console.log('\n📊 RESULTADOS DE FIRMA:');
+            console.log('Documentos procesados:', resultados.length);
+            console.log('Documentos firmados exitosamente:', resultados.filter(r => r.firmado).length);
+            console.log('Documentos con error:', resultados.filter(r => !r.firmado).length);
+            resultados.forEach(r => {
+                console.log(`  - ${r.documento}: ${r.firmado ? '✅ FIRMADO' : '❌ ERROR: ' + r.error}`);
+            });
+
+            if (resultados.every(r => r.firmado)) {
+                console.log('\n✅ TODOS LOS DOCUMENTOS FUERON FIRMADOS EXITOSAMENTE');
+                
+                // 📝 MARCAR LA ETAPA COMO FIRMADA (después de verificar que todos los documentos se procesaron correctamente)
+                console.log('📝 Marcando etapa como firmada...');
+                await createStageSigned(etapaActual.id_registro_etapa, application.id_formato, application.id_registro_solicitud, etapaActual.id_firmante, 'FIRMADO');
+                console.log('✓ Etapa marcada como firmada');
+                
+                // 🔄 ACTUALIZAR LA ETAPA ACTUAL EN LA SOLICITUD (incrementar a la siguiente)
+                const proximaEtapaNum = numeroEtapaActual + 1;
+                await updateApplicationActualStage(application.id_registro_solicitud, proximaEtapaNum);
+                console.log(`🔄 Etapa actualizada en BD: ${proximaEtapaNum}`);
+                
+                // RECALCULAR stages para obtener el estado actualizado
+                const stagesSignedActualizado = await getStagesSignedByapplication(userInfo.selectedDocumentId, application.id_formato);
+                console.log(`Etapas firmadas: ${stagesSignedActualizado.length} de ${formatInfo.cantidad_firmantes}`);
+
+                // Obtener TODAS las etapas del formato
                 const allStages = await getAllStagesByFormat(application.id_formato);
                 console.log('allStages.length:', allStages.length);
 
+                // Calcular la PRÓXIMA etapa basada en las etapas ya completadas
+                const proximaEtapa = stagesSignedActualizado.length + 1;
+                console.log(`Próxima etapa a firmar: ${proximaEtapa}`);
+
+                // Verificar si hay más etapas por firmar
                 if (proximaEtapa <= formatInfo.cantidad_firmantes && proximaEtapa <= allStages.length) { 
-                    //aqui verifico si ya es el ultimo firmante, si cumple la condicion envio al siguiente
+                    console.log(`\n📧 ===== ENVIANDO NOTIFICACIÓN AL SIGUIENTE FIRMANTE =====`);
+                    console.log('─'.repeat(60));
+                    
+                    //obtener el siguiente firmante
                     const userFirmante = await getUserInfo(allStages[proximaEtapa - 1].id_firmante);
                     const emailFirmante = `${userFirmante.nombre_usuario.trim()}@newstetic.com`.toLowerCase();
 
                     console.log(` Siguiente Firmante: ${userFirmante.nombre_completo}`);
-                    console.log(` Email: ${emailFirmante}`)
+                    console.log(` Email: ${emailFirmante}`);
+                    console.log(` Etapa: ${proximaEtapa} de ${formatInfo.cantidad_firmantes}`);
+                    
                     await sendMail({
                         to: emailFirmante,
                         type: 'signer',
@@ -300,17 +410,13 @@ async function signAllDocuments(req, res) {
                         },
                         text: `Hola ${userFirmante.nombre_completo},\n\nTienes una nueva solicitud de firma pendiente.\n\nDetalles:\n- Solicitante: ${docPublicUrl.nombre_completo}\n- Formato: ${formatInfo.nombre_formato}\n\nPor favor, ingresa al sistema para revisar y firmar los documentos asignados.\n\nEste es un correo automático. Por favor no respondas directamente a este mensaje.\nSi tienes dudas, contacta al administrador del sistema.`
                       });
-                    console.log(` Correo enviado al siguiente firmante`);
-                } else {
-                    console.log(`  No se puede enviar correo al siguiente firmante - Validación fallida (proximaEtapa: ${proximaEtapa}, cantidad_firmantes: ${formatInfo.cantidad_firmantes}, allStages.length: ${allStages.length})`);
-                }
-
-            // Actualizar estado si todo fue exitoso
-            if (resultados.every(r => r.firmado)) {
-
-                if (stagesSigned.length === formatInfo.cantidad_firmantes) {
-                    console.log(' Todos los stages firmados - Iniciando envío de correo de finalización');
+                    console.log(` ✅ Correo enviado al siguiente firmante`);
+                    console.log('─'.repeat(60) + '\n');
+                } else if (stagesSignedActualizado.length === formatInfo.cantidad_firmantes) {
+                    // TODAS LAS ETAPAS COMPLETADAS
+                    console.log('\n✅ TODAS LAS ETAPAS COMPLETADAS - CAMBIANDO ESTADO A FIRMADO');
                     await changeStateApplication(userInfo.selectedDocumentId, 'FIRMADO', null);
+                    console.log('✅ Estado de solicitud cambiado a FIRMADO');
 
                     // ==================== ENVIAR CORREO AL SOLICITANTE - SOLICITUD COMPLETADA ====================
                     console.log('\n ===== ENVIANDO NOTIFICACIÓN DE FINALIZACIÓN AL SOLICITANTE ===== ');
@@ -368,42 +474,63 @@ async function signAllDocuments(req, res) {
                     }
 
                     console.log('─'.repeat(60) + '\n');
+                } else {
+                    console.log(`⚠️ NO TODAS LAS ETAPAS COMPLETADAS`);
+                    console.log(`Etapas firmadas: ${stagesSignedActualizado.length} de ${formatInfo.cantidad_firmantes}`);
                 }
-            } 
+            } else {
+                console.log('\n❌ ALGUNOS DOCUMENTOS NO SE FIRMARON EXITOSAMENTE');
+                const stagesSignedActualizado = await getStagesSignedByapplication(userInfo.selectedDocumentId, application.id_formato);
+                return res.status(400).json({
+                    message: 'Error: Algunos documentos no se pudieron firmar',
+                    documentosFirmados: resultados.filter(r => r.firmado).length,
+                    documentosError: resultados.filter(r => !r.firmado).length,
+                    resultados
+                });
+            }
+
+            // Obtener el estado actual de etapas completadas
+            const stagesSignedFinal = await getStagesSignedByapplication(userInfo.selectedDocumentId, application.id_formato);
+            const proximaEtapaFinal = Math.min(stagesSignedFinal.length + 1, formatInfo.cantidad_firmantes);
 
             return res.status(200).json({
                 message: 'Proceso de firma completado',
-                etapaActual: proximaEtapa,
+                etapaActual: proximaEtapaFinal,
                 totalEtapas: formatInfo.cantidad_firmantes,
-                estaCompleto: stagesSigned.length === formatInfo.cantidad_firmantes,
+                estaCompleto: stagesSignedFinal.length === formatInfo.cantidad_firmantes,
                 resultados
             });
 
         } catch (error) {
-            console.error('Error detallado al procesar firma:', {
-                error: error.message,
-                stack: error.stack,
-                url: firmaUrl?.toString(),
-                originalUrl: docPublicUrl?.url_firma
-            });
+            console.error('\n❌ ERROR EN BLOQUE PRINCIPAL DE FIRMA:');
+            console.error('Tipo de error:', error.constructor.name);
+            console.error('Mensaje:', error.message);
+            console.error('Stack:', error.stack);
             
             return res.status(500).json({
                 message: 'Error al procesar firma',
                 error: error.message,
+                errorType: error.constructor.name,
                 details: {
                     url: firmaUrl?.toString(),
                     originalUrl: docPublicUrl?.url_firma,
-                    message: error.message
+                    message: error.message,
+                    stack: error.stack
                 }
             });
         }
 
     } catch (error) {
-        console.error('Error general:', error);
+        console.error('\n❌ ERROR EN CATCH EXTERNO:');
+        console.error('Tipo de error:', error.constructor.name);
+        console.error('Mensaje:', error.message);
+        console.error('Stack:', error.stack);
+        
         return res.status(500).json({
-            message: 'Error al firmar documentos',
+            message: 'Error general al firmar documentos',
             error: error.message,
-            details: error.stack
+            errorType: error.constructor.name,
+            stack: error.stack
         });
     }
 }
@@ -444,6 +571,7 @@ async function rejectApplication(req, res) {
         });
     }
 }
+
 
 module.exports = {
   //pendingRender,

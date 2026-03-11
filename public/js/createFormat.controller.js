@@ -119,13 +119,17 @@ let etapaCounter = 0;
                                         </label>
                                         <input 
                                             type="text" 
-                                            name="palabraClave[]" 
-                                            class="form-input"
-                                            placeholder="Ej: FIRMA_COLABORADOR"
+                                            name="palabraClavePrincipal[]" 
+                                            class="palabra-clave-principal form-input"
+                                            placeholder="Ej: Firma:"
                                             value="${etapa.palabra_clave || ''}"
                                             style="background-color: #ffffff; border: 1px solid #ccc;"
                                             required
                                         />
+                                        <div class="palabras-alternativas-container" style="display: grid; gap: 8px; margin-top: 8px;"></div>
+                                        <button type="button" class="btn btn-small" onclick="agregarPalabraClaveAlternativa(this)" style="margin-top: 8px; width: auto; padding: 6px 12px; font-size: 12px;">
+                                            + Alternativa
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -315,11 +319,15 @@ let etapaCounter = 0;
                             </label>
                             <input 
                                 type="text" 
-                                name="palabraClave[]" 
-                                class="form-input"
-                                placeholder="Ej: FIRMA_COLABORADOR"
+                                name="palabraClavePrincipal[]" 
+                                class="palabra-clave-principal form-input"
+                                placeholder="Ej: Firma:"
                                 required
                             />
+                            <div class="palabras-alternativas-container" style="display: grid; gap: 8px; margin-top: 8px;"></div>
+                            <button type="button" class="btn btn-small" onclick="agregarPalabraClaveAlternativa(this)" style="margin-top: 8px; width: auto; padding: 6px 12px; font-size: 12px;">
+                                + Alternativa
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -345,6 +353,40 @@ let etapaCounter = 0;
                 number.textContent = index + 1;
                 etapa.dataset.etapa = index + 1;
             });
+        }
+
+        // Agregar palabra clave alternativa
+        function agregarPalabraClaveAlternativa(button) {
+            const etapaCard = button.closest('.etapa-card');
+            const containerAlternativas = etapaCard.querySelector('.palabras-alternativas-container');
+            
+            const cantidadAlternativas = containerAlternativas.querySelectorAll('.palabra-clave-alternativa').length + 1;
+            
+            const div = document.createElement('div');
+            div.style.cssText = 'display: flex; gap: 8px; align-items: flex-end;';
+            div.className = 'palabra-clave-alternativa';
+            
+            div.innerHTML = `
+                <div style="flex: 1;">
+                    <label style="font-size: 11px; color: #666; display: block; margin-bottom: 4px;">Alternativa ${cantidadAlternativas}</label>
+                    <input 
+                        type="text" 
+                        name="palabraClaveAlternativa[]" 
+                        class="palabra-clave-alt form-input"
+                        placeholder="Ej: Signature:"
+                    />
+                </div>
+                <button type="button" class="btn btn-small" onclick="eliminarPalabraClaveAlternativa(this)" style="padding: 6px 10px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    ✕
+                </button>
+            `;
+            
+            containerAlternativas.appendChild(div);
+        }
+
+        // Eliminar palabra clave alternativa
+        function eliminarPalabraClaveAlternativa(button) {
+            button.parentElement.remove();
         }
 
         // Submit del formulario
@@ -378,11 +420,31 @@ let etapaCounter = 0;
 
             etapas.forEach((etapa, index) => {
                 const idFirmante = etapa.querySelector('select[name="idFirmante[]"]').value;
-                const palabraClave = etapa.querySelector('input[name="palabraClave[]"]').value.trim();
                 const idEtapa = etapa.dataset.etapaId; // ID de etapa existente si existe
+                
+                // 🔑 Obtener y concatenar palabras clave
+                const palabraClaveInputs = etapa.querySelectorAll('input[name="palabraClavePrincipal[]"]');
+                const palabrasAlternativas = etapa.querySelectorAll('input[name="palabraClaveAlternativa[]"]');
+                
+                // Construir array: primero principal, luego alternativas
+                const todasLasPalabras = Array.from(palabraClaveInputs)
+                    .map(input => input.value.trim())
+                    .filter(p => p.length > 0);
+                
+                Array.from(palabrasAlternativas)
+                    .map(input => input.value.trim())
+                    .filter(p => p.length > 0)
+                    .forEach(p => todasLasPalabras.push(p));
+                
+                // Concatenar con |
+                const palabraClave = todasLasPalabras.join('|');
+                
+                if (todasLasPalabras.length === 0) {
+                    throw new Error(`Etapa ${index + 1}: Debes agregar al menos una palabra clave`);
+                }
 
                 formData.etapas.push({
-                    id_registro_etapa: idEtapa || null, // null si es nueva etapa
+                    id_registro_etapa: idEtapa || null,
                     orden: index + 1,
                     idFirmante,
                     palabraClave

@@ -344,7 +344,15 @@ function signAllDocuments() {
         body: JSON.stringify(data)
     })
     
-    .then(response => response.json())
+    .then(response => {
+        // Verificar el status HTTP PRIMERO
+        if (!response.ok) {
+            return response.json().then(errorData => {
+                throw new Error(errorData.message || `Error HTTP ${response.status}`);
+            });
+        }
+        return response.json();
+    })
     .then(data => {
         // Ocultar modal de carga
         if (loadingModal) {
@@ -376,26 +384,17 @@ function signAllDocuments() {
             return;
         }
 
-        if (data.message==='Proceso de firma completado') {
-            Swal.fire({
-                icon: 'success',
-                title: 'Éxito',
-                text: data.message,
-                confirmButtonColor: '#3085d6',
-                confirmButtonText: 'Aceptar'
-            }).then(() => {
-                // Espera a que el usuario cierre la alerta antes de recargar
-                window.location.reload();
-            });
-           
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: data.message || 'Error al firmar los documentos'
-            });
-            
-        }
+        // Si llegó aquí, la firma fue exitosa
+        console.log('✅ Firma completada exitosamente');
+        Swal.fire({
+            icon: 'success',
+            title: 'Éxito',
+            text: 'Documentos firmados exitosamente',
+            confirmButtonColor: '#3085d6',
+            confirmButtonText: 'Aceptar'
+        }).then(() => {
+            window.location.reload();
+        });
     })
     .catch(error => {
         // Ocultar modal de carga en caso de error
@@ -403,8 +402,14 @@ function signAllDocuments() {
             loadingModal.classList.remove('active');
         }
 
-        console.error('Error:', error);
-        alert('Error al procesar la firma de documentos');
+        console.error('❌ Error en firma:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error al Firmar',
+            text: error.message || 'Error al procesar la firma de documentos',
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Aceptar'
+        });
     });
 }
 
@@ -526,6 +531,8 @@ function rejectApplication() {
         }
     });
 }
+
+
 
 // ============= PAGINACIÓN PARA PENDING =============
 let currentPagePending = 1;

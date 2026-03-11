@@ -119,6 +119,7 @@ async function getDetallesDocuments(idSolicitud, estado) {
                     df.id_solicitud,
                     df.id_detalle,
                     sd.fecha_solicitud,
+                    sd.estado_solicitud,
                     df.url_archivo_firmado as url_archivo,
                     df.fecha_firma,
                     ds.url_archivos as url_original,
@@ -304,12 +305,10 @@ async function countSolicitedDocuments(userId) {
 
 async function createDocumentSigned(url, formato, idFirmante, idDetalleSolicitud, idSolicitud) {
     try {
-
-
         const pool = await config.poolPromise;
         const result = await pool.request()
             .input('url', sql.VarChar, url)
-            .input('formato', sql.VarChar, formato)
+            .input('formato', sql.Int, formato)  // Cambiar a Int ya que es id_formato (número)
             .input('idFirmante', sql.Int, idFirmante)
             .input('idDetalleSolicitud', sql.Int, idDetalleSolicitud)
             .input('idSolicitud', sql.Int, idSolicitud)

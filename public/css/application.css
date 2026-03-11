@@ -644,6 +644,46 @@ body {
             margin-bottom: 0;
         }
 
+        /* Acciones en tarjeta de documento */
+        .document-actions-card {
+            display: flex;
+            gap: var(--space-2);
+            margin-top: var(--space-4);
+        }
+
+        .btn-download-card {
+            flex: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-2);
+            padding: 0.625rem 1rem;
+            background: var(--primary-500);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 0.8125rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: var(--font-sans);
+        }
+
+        .btn-download-card:hover {
+            transform: translateY(-2px);
+            background: rgba(0, 163, 180, 0.85);
+            box-shadow: 0 4px 12px rgba(0, 163, 180, 0.3);
+        }
+
+        .btn-download-card:active {
+            transform: translateY(0);
+        }
+
+        .btn-download-card svg {
+            width: 16px;
+            height: 16px;
+        }
+
         /* Estilos renovados para la sección de comentarios */
         .comment-section {
             margin-top: auto;

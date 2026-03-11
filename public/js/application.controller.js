@@ -345,6 +345,77 @@ function closeCommentModal() {
     }
 }
 
+// Función para descargar todos los documentos de una aplicación
+function downloadAllApplicationDocumentsById(idSolicitud) {
+    console.log('Descargando todos los documentos de aplicación. ID:', idSolicitud);
+    
+    if (!idSolicitud) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Atención',
+            text: 'Error: ID de solicitud no disponible',
+            confirmButtonColor: '#3085d6',
+            confirmButtonText: 'Aceptar'
+        });
+        return;
+    }
+
+    // Mostrar alerta de carga
+    Swal.fire({
+        title: 'Preparando descarga...',
+        html: 'Se está preparando el archivo ZIP con todos los documentos firmados. Por favor espera...',
+        icon: 'info',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: async () => {
+            Swal.showLoading();
+            
+            try {
+                // Realizar la descarga
+                const response = await fetch(`/api/application/download-all/${idSolicitud}`);
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || errorData.message || `Error HTTP ${response.status}`);
+                }
+
+                // Descargar el ZIP
+                const blob = await response.blob();
+                
+                if (blob.size === 0) {
+                    throw new Error('El archivo descargado está vacío');
+                }
+
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `solicitud_${idSolicitud}.zip`;
+                document.body.appendChild(link);
+                link.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(link);
+
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Descarga completada!',
+                    text: 'Los documentos han sido descargados exitosamente',
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'Aceptar'
+                });
+            } catch (error) {
+                console.error('Error al descargar:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error al descargar los documentos: ' + error.message,
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'Aceptar'
+                });
+            }
+        }
+    });
+}
+
 // fuera de document.addEventListener(...)
 function signAllDocuments() {
     //console.log('Intentando firmar documentos. ID seleccionado:', selectedDocumentId);

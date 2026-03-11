@@ -35,6 +35,9 @@ async function saveStages(id_formato, etapas) {
     try {
         let pool = await poolPromise;
         for (let etapa of etapas) {
+            // Guardar tal como está (sin normalizar)
+            console.log(`📝 Guardando etapa con palabra(s) clave: "${etapa.palabraClave}"`);
+            
             await pool.request()
                 .input('id_formato', sql.Int, id_formato)
                 .input('orden', sql.Int, etapa.orden)
@@ -131,6 +134,9 @@ async function changeStagesByFormatId(id_registro_etapa) {
 async function updateStage(id_registro_etapa, orden, id_firmante, palabra_clave) {
     try {
         let pool = await poolPromise;
+        // Guardar tal como está (sin normalizar)
+        console.log(`📝 Actualizando etapa con palabra(s) clave: "${palabra_clave}"`);
+        
         await pool.request()
             .input('id_registro_etapa', sql.Int, id_registro_etapa)
             .input('orden', sql.Int, orden)

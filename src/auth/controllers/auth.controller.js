@@ -47,11 +47,11 @@ exports.login = async (req, res) => {
       if (isApiRequest) {
         return res.status(401).json({
           error: true,
-          message: 'Credenciales inválidas'
+          message: 'Credenciales inválidas o usuario bloqueado'
         });
       }
       return res.render('auth/views/auth', {
-        error: 'Credenciales inválidas'
+        error: 'Credenciales inválidas o usuario bloqueado'
       });
     }
 

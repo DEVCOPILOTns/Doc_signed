@@ -161,10 +161,52 @@ async function getApplicationDocuments(applicationId) {
     }
 }
 
+// Función para obtener todos los documentos FIRMADOS de una solicitud para descargar
+async function getAllDocumentsForDownload(applicationId) {
+    try {
+        if (applicationId === undefined || applicationId === null || applicationId === '') {
+            return [];
+        }
+
+        const pool = await config.poolPromise;
+        const isInt = Number.isInteger(Number(applicationId));
+        const paramType = isInt ? sql.Int : sql.VarChar;
+
+        // Obtener solo documentos firmados
+        const result = await pool.request()
+            .input('applicationId', paramType, applicationId)
+            .query(`
+                SELECT
+                    df.id_detalle_firmado as id,
+                    df.url_archivo_firmado as url_archivo,
+                    df.id_detalle,
+                    df.fecha_firma,
+                    df.id_solicitud
+                FROM Documentos_Firmados df
+                WHERE df.id_solicitud = @applicationId
+                ORDER BY df.fecha_firma DESC
+            `);
+
+        const rows = result.recordset || [];
+        return rows.map((r, index) => ({
+            id: r.id,
+            url_archivo: r.url_archivo,
+            id_detalle: r.id_detalle,
+            fecha: r.fecha_firma,
+            nombre_original: (r.url_archivo || '').split('/').pop() || `documento_${index + 1}.pdf`,
+            tipo: 'FIRMADO'
+        }));
+    } catch (error) {
+        console.error('Error fetching all documents for download:', error);
+        throw error;
+    }
+}
+
 module.exports = {
     getApplicationsByUser,
     getApplicationById,
     getApplicationDocuments,
+    getAllDocumentsForDownload,
     getStageSignedByApplicationId,
     getStagesByFormatId
 };
