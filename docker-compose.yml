@@ -3,7 +3,7 @@ version: '3.8'
 services:
   nueva-app:
     build: .
-    container_name: nueva-app
+    container_name: NSigned
     restart: unless-stopped
     ports:
       - "3008:3000"
